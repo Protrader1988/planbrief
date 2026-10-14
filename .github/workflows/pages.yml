@@ -1,0 +1,25 @@
+name: Publish phone site
+on:
+  push:
+    branches: [main]
+    paths: ["cloud/site/**"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: { name: github-pages, url: "${{ steps.deployment.outputs.page_url }}" }
+    steps:
+      - uses: actions/checkout@v4
+      - name: Write config from secrets
+        run: |
+          cat > cloud/site/config.js <<CFG
+          window.PLANBRIEF_CONFIG = { supabaseUrl: "${{ secrets.SUPABASE_URL }}", supabaseAnonKey: "${{ secrets.SUPABASE_ANON_KEY }}" };
+          CFG
+      - uses: actions/upload-pages-artifact@v3
+        with: { path: cloud/site }
+      - id: deployment
+        uses: actions/deploy-pages@v4

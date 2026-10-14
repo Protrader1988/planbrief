@@ -1,0 +1,66 @@
+name: Render PlanBrief video
+
+on:
+  workflow_dispatch:
+    inputs:
+      job_id:
+        description: "Supabase jobs.id to process"
+        required: true
+        type: string
+
+concurrency:
+  group: render-${{ inputs.job_id }}
+  cancel-in-progress: false
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    env:
+      SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+      SUPABASE_SERVICE_KEY: ${{ secrets.SUPABASE_SERVICE_KEY }}
+      CLAUDE_CODE_OAUTH_TOKEN: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      ANALYZE_PROVIDER: ${{ secrets.ANTHROPIC_API_KEY != '' && 'api' || 'claude-code' }}
+      TTS_PROVIDER: piper
+      PIPER_MODEL: ${{ github.workspace }}/data/voices/en-us-ryan-high.onnx
+      PIPER_PY: python3
+      VIDEO_PRESET: veryfast
+      VIDEO_CRF: "20"
+      RENDER_DPI: "150"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: System packages
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y -qq ffmpeg poppler-utils fonts-dejavu-core fonts-inter >/dev/null || sudo apt-get install -y -qq ffmpeg poppler-utils fonts-dejavu-core >/dev/null
+          ffmpeg -version | head -1; pdftoppm -v 2>&1 | head -1
+      - name: Node dependencies
+        run: npm ci --no-audit --no-fund
+      - name: Piper voice
+        run: |
+          pip install -q piper-tts
+          mkdir -p data/voices && cd data/voices
+          curl -sSL -o v.tar.gz https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-en-us-ryan-high.tar.gz
+          tar xzf v.tar.gz && rm v.tar.gz && ls
+      - name: Claude Code
+        if: env.ANTHROPIC_API_KEY == ''
+        run: npm install -g @anthropic-ai/claude-code && claude --version
+      - name: Run job
+        run: npx tsx scripts/run-job.ts "${{ inputs.job_id }}"
+      - name: Keep logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: job-${{ inputs.job_id }}-work
+          path: |
+            data/jobs/${{ inputs.job_id }}/verify
+            data/jobs/${{ inputs.job_id }}/*.json
+          if-no-files-found: ignore

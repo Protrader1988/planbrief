@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0b1020" />
+<title>PlanBrief</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23f59e0b'/%3E%3C/svg%3E" />
+<style>
+  :root { --bg:#0b1020; --panel:#121a2e; --panel2:#192340; --line:rgba(255,255,255,.08); --text:#e9eef8; --muted:#9aa7c2; --accent:#f59e0b; --ok:#22c55e; --danger:#ef4444; }
+  * { box-sizing:border-box } html,body { margin:0; background:var(--bg); color:var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; -webkit-font-smoothing:antialiased }
+  .wrap { max-width:760px; margin:0 auto; padding:20px 16px 80px }
+  .brand { display:flex; align-items:center; gap:10px; font-weight:600; padding:6px 0 22px } .brand i { width:12px; height:12px; border-radius:3px; background:var(--accent) } .brand small { color:var(--muted); font-weight:400 }
+  h1 { font-size:26px; line-height:1.15; margin:0 0 10px } .lead { color:var(--muted); margin:0 0 20px }
+  .card { background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:18px }
+  .drop { border:1.5px dashed rgba(255,255,255,.18); border-radius:14px; padding:34px 16px; text-align:center; cursor:pointer } .drop strong { display:block; font-size:17px; margin-bottom:6px } .drop span { color:var(--muted); font-size:14px }
+  .btn { display:inline-flex; align-items:center; gap:8px; background:var(--accent); color:#1a1304; border:0; border-radius:999px; padding:13px 20px; font-weight:600; font-size:15px; cursor:pointer; text-decoration:none } .btn:disabled { opacity:.5 } .btn.ghost { background:transparent; color:var(--text); border:1px solid var(--line) }
+  .row { display:flex; gap:12px; align-items:center; flex-wrap:wrap } .muted { color:var(--muted) } .err { color:var(--danger) }
+  .list { display:grid; gap:10px; margin-top:24px }
+  .job { display:flex; justify-content:space-between; align-items:center; gap:12px; padding:14px 16px; background:var(--panel); border:1px solid var(--line); border-radius:12px; text-decoration:none; color:inherit }
+  .job .name { font-weight:500; overflow:hidden; text-overflow:ellipsis; white-space:nowrap }
+  .pill { font-size:12px; padding:4px 10px; border-radius:999px; background:var(--panel2); color:var(--muted); white-space:nowrap } .pill.done { background:rgba(34,197,94,.15); color:var(--ok) } .pill.error { background:rgba(239,68,68,.15); color:var(--danger) } .pill.live { background:rgba(245,158,11,.15); color:var(--accent) }
+  .progress { height:8px; border-radius:999px; background:var(--panel2); overflow:hidden; margin:14px 0 8px } .progress>div { height:100%; background:var(--accent); transition:width .4s }
+  video { width:100%; border-radius:14px; background:#000; display:block }
+  h2 { font-size:19px; margin:28px 0 12px }
+  .seg { display:grid; grid-template-columns:1fr; gap:10px; padding:14px; background:var(--panel); border:1px solid var(--line); border-radius:12px; margin-bottom:10px; cursor:pointer } .seg img { width:100%; border-radius:8px; background:#fff } .seg .t { font-weight:600; display:flex; justify-content:space-between; gap:8px } .seg .t small { color:var(--muted); font-weight:400 } .seg p { margin:0; color:#c9d3e8; font-size:15px; line-height:1.5 }
+  @media (min-width:640px) { .seg { grid-template-columns:150px 1fr } }
+  .sum h3 { margin:0 0 8px; font-size:13px; color:var(--muted); text-transform:uppercase; letter-spacing:.5px } .sum ul { margin:0; padding-left:18px; font-size:14px; line-height:1.55; color:#c9d3e8 }
+  .grid2 { display:grid; grid-template-columns:1fr; gap:12px } @media (min-width:640px) { .grid2 { grid-template-columns:1fr 1fr } }
+  .steps { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px } .step { font-size:12px; padding:9px 10px; border-radius:10px; background:var(--panel2); color:var(--muted) } .step.on { color:var(--text); outline:1px solid var(--accent) } .step.ok { color:var(--ok) }
+  .setup { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); border-radius:12px; padding:14px; font-size:14px }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <a class="brand" href="./"><i></i> PlanBrief <small>· document to video</small></a>
+  <div id="app"><p class="muted">Loading…</p></div>
+</div>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+<script>
+// ---- configuration: filled in by config.js (written during setup) ----
+const CFG = window.PLANBRIEF_CONFIG || {};
+const app = document.getElementById("app");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
+const ORDER = ["queued", "ingesting", "analyzing", "verifying", "narrating", "rendering", "uploading", "done"];
+const STEPS = [["queued", "ingesting", "1 · Read pages"], ["analyzing", "2 · Write script"], ["verifying", "3 · Verify ×3"], ["narrating", "rendering", "uploading", "4 · Narrate and film"]];
+
+if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
+  app.innerHTML = `<div class="setup"><strong>Not configured yet.</strong> cloud/site/config.js needs supabaseUrl and supabaseAnonKey.</div>`;
+} else {
+  const sb = supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+  const id = new URLSearchParams(location.search).get("job");
+  if (id) jobPage(id); else homePage();
+
+  async function homePage() {
+    const { data: jobs } = await sb.from("jobs").select("id,created_at,original_name,status,message,page_count,brief").order("created_at", { ascending: false }).limit(20);
+    app.innerHTML = `
+      <h1>Turn any bid package into a video you can actually follow.</h1>
+      <p class="lead">Upload an RFP, RFQ, drawing set or spec book. You get a narrated, triple-verified walkthrough filmed over the real pages, plus a written brief. Come back to this page any time; the job keeps running in the cloud.</p>
+      <div class="card">
+        <label class="drop" id="drop"><strong id="dropLabel">Tap to choose a PDF</strong><span id="dropSub">RFP · RFQ · drawings · specs, up to 200 MB</span><input id="file" type="file" accept="application/pdf,.pdf" hidden></label>
+        <div class="row" style="margin-top:16px;justify-content:space-between"><span class="muted" style="font-size:13px">Typical run: 30 to 60 minutes. Safe to close the page.</span><button class="btn" id="go" disabled>Make the video</button></div>
+        <p class="err" id="err"></p>
+      </div>
+      <div class="list" id="jobs"></div>`;
+    renderJobs(jobs || []);
+    const file = document.getElementById("file"), go = document.getElementById("go"), err = document.getElementById("err");
+    let picked = null;
+    file.onchange = () => { picked = file.files[0]; if (picked) { document.getElementById("dropLabel").textContent = picked.name; document.getElementById("dropSub").textContent = (picked.size / 1048576).toFixed(1) + " MB"; go.disabled = false; } };
+    go.onclick = async () => {
+      if (!picked) return; go.disabled = true; go.textContent = "Uploading…"; err.textContent = "";
+      try {
+        const key = `${crypto.randomUUID()}/${picked.name.replace(/[^\w.\- ]+/g, "_")}`;
+        const up = await sb.storage.from("uploads").upload(key, picked, { contentType: "application/pdf", upsert: false });
+        if (up.error) throw up.error;
+        const ins = await sb.from("jobs").insert({ original_name: picked.name, upload_path: key }).select("id").single();
+        if (ins.error) throw ins.error;
+        location.href = `?job=${ins.data.id}`;
+      } catch (e) { err.textContent = e.message || String(e); go.disabled = false; go.textContent = "Make the video"; }
+    };
+    sb.channel("jobs-list").on("postgres_changes", { event: "*", schema: "public", table: "jobs" }, async () => {
+      const { data } = await sb.from("jobs").select("id,created_at,original_name,status,message,page_count,brief").order("created_at", { ascending: false }).limit(20);
+      renderJobs(data || []);
+    }).subscribe();
+  }
+  function renderJobs(jobs) {
+    document.getElementById("jobs").innerHTML = jobs.map((j) => `
+      <a class="job" href="?job=${j.id}"><div style="min-width:0"><div class="name">${esc(j.brief?.projectName || j.original_name)}</div><div class="muted" style="font-size:13px">${new Date(j.created_at).toLocaleString()}${j.page_count ? " · " + j.page_count + " pages" : ""}</div></div>
+      <span class="pill ${j.status === "done" ? "done" : j.status === "error" ? "error" : "live"}">${j.status === "done" ? "Ready" : j.status === "error" ? "Failed" : esc(j.message)}</span></a>`).join("");
+  }
+
+  async function jobPage(id) {
+    let job = null;
+    const load = async () => { const { data } = await sb.from("jobs").select("*").eq("id", id).single(); job = data; draw(); };
+    await load();
+    sb.channel("job-" + id).on("postgres_changes", { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${id}` }, (p) => { job = p.new; draw(); }).subscribe();
+    // fallback poll while running
+    setInterval(() => { if (job && job.status !== "done" && job.status !== "error") load(); }, 15000);
+
+    function draw() {
+      if (!job) { app.innerHTML = `<p class="err">Job not found.</p>`; return; }
+      const idx = ORDER.indexOf(job.status);
+      const steps = STEPS.map((s) => { const label = s[s.length - 1], keys = s.slice(0, -1); const on = keys.includes(job.status); const ok = idx > ORDER.indexOf(keys[keys.length - 1]); return `<div class="step ${on ? "on" : ""} ${ok ? "ok" : ""}">${ok ? "✓ " : ""}${label}</div>`; }).join("");
+      const b = job.brief;
+      const segs = b ? b.segments.map((s, i) => `
+        <div class="seg" onclick="seek(${i})">${job.page_urls ? `<img src="${esc(job.page_urls[s.page])}" loading="lazy" alt="">` : ""}<div><div class="t"><span>${esc(s.title)}</span><small>${job.segment_starts ? fmt(job.segment_starts[i]) + " · " : ""}sheet ${s.page + 1}</small></div><p>${esc(s.narration)}</p></div></div>`).join("") : "";
+      const L = { scope: "Scope", keyDates: "Key dates", requirements: "Bid requirements", risks: "Risks and red flags", questionsToAsk: "Questions to ask" };
+      const sum = b ? Object.keys(L).filter((k) => b.summary[k]?.length).map((k) => `<div class="card sum"><h3>${L[k]}</h3><ul>${b.summary[k].map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>`).join("") : "";
+      const v = job.verification; const m = v && (v.mechanicalAfterFix || v.mechanical);
+      const verif = v ? `<div class="card" style="margin-top:14px"><div class="row" style="justify-content:space-between"><strong>Triple verification</strong><span class="pill ${v.summary.verdict === "pass" ? "done" : v.summary.verdict === "pass-with-notes" ? "live" : "error"}">${v.summary.verdict === "pass" ? "Passed" : v.summary.verdict === "pass-with-notes" ? "Passed with notes" : "Needs review"}</span></div>
+        <div class="muted" style="font-size:13px;margin-top:8px">${m.totals.verified + (m.totals.cited || 0)} of ${m.totals.claims} figures matched to the sheets · reviewer: ${v.reviewer.ran ? v.reviewer.issues.length + " findings" : "skipped"} · audit: ${v.auditor.ran ? v.auditor.issues.length + " findings" : "skipped"}${v.fixes.applied ? " · " + v.fixes.applied + " segments corrected" : ""}</div></div>` : "";
+      app.innerHTML = `
+        <h1>${esc(b?.projectName || job.original_name)}</h1>${b?.oneLiner ? `<p class="lead">${esc(b.oneLiner)}</p>` : ""}
+        ${job.status === "done" && job.video_url ? `<div class="card" style="padding:0;overflow:hidden"><video id="v" src="${esc(job.video_url)}" controls playsinline preload="metadata"></video><div class="row" style="padding:14px;justify-content:space-between"><span class="muted" style="font-size:13px">${fmt(job.duration_sec || 0)} · ${job.page_count} pages · ${b?.segments.length} parts</span><a class="btn ghost" href="${esc(job.video_url)}" download>Download</a></div></div>`
+        : `<div class="card"><div class="row" style="justify-content:space-between"><strong>${job.status === "error" ? "Something went wrong" : esc(job.message)}</strong><span class="muted">${job.progress}%</span></div><div class="progress"><div style="width:${job.progress}%"></div></div>${job.status === "error" ? `<p class="err" style="font-size:14px">${esc(job.error)}</p>` : `<div class="steps">${steps}</div><p class="muted" style="font-size:13px;margin-bottom:0">You can close this page. Reopen the link to see the result.</p>`}</div>`}
+        ${verif}
+        ${b ? `<h2>Walkthrough</h2>${segs}<h2>Written brief</h2><div class="grid2">${sum}</div>` : ""}
+        <p style="margin-top:24px"><a class="btn ghost" href="./">← All documents</a></p>`;
+    }
+    window.seek = (i) => { const v = document.getElementById("v"); const t = job.segment_starts?.[i]; if (v && t != null) { v.currentTime = t + 0.05; v.play(); window.scrollTo({ top: 0, behavior: "smooth" }); } };
+  }
+}
+</script>
+</body>
+</html>
