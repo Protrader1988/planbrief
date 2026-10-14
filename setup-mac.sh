@@ -12,4 +12,4 @@ npm install
 [ -f .env ] || cp .env.example .env
 npm run build
 echo
-echo "Done. Start it with:  npm start   then open http://localhost:3000"
+echo "Done. Install it as a background service with:  ./scripts/install-mac-service.sh"

@@ -41,7 +41,14 @@ npm start             # http://localhost:3000
 
 If Claude Code isn't installed, set `ANALYZE_PROVIDER=manual` in `.env`: after upload the job page shows a prompt to paste into a Claude chat, and a box to paste the JSON script back. The app then narrates and films it.
 
-To reach it from your phone on the same Wi-Fi, use your Mac's local address (`http://<mac-ip>:3000`); for anywhere, a free Cloudflare Tunnel.
+### Keep it running and use it from your phone
+
+```bash
+./scripts/install-mac-service.sh    # background service: starts at login, restarts on crash
+./scripts/install-phone-access.sh   # free stable HTTPS address via Tailscale Funnel
+```
+
+Set `APP_PASSWORD` in `.env` before exposing it; every phone or laptop then signs in once. The Mac has to be awake for the site to answer (System Settings → Energy → prevent automatic sleeping, or keep it plugged in with the lid open). Uploads from the phone go straight into the same queue; rendering happens on the Mac and the video is ready when you come back to the link.
 
 ## Run with API keys instead
 
