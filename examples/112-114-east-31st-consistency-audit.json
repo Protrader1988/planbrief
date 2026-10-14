@@ -1,0 +1,220 @@
+{
+ "issues": [
+  {
+   "segmentId": "s19",
+   "severity": "critical",
+   "kind": "numeric-inconsistency",
+   "claim": "46 feet 4 of extension at the basement and 27 feet 9 at the first and second floors",
+   "problem": "These depths cannot be reconciled with the zoning numbers in s10. The existing residential rear yard is 43'-10\", so a 46'-4\" extension into the yard is physically impossible (it exceeds the yard). s10's rear yard arithmetic gives the actual extension depths: 43'-10\" minus 30'-11 1/2\" = 12'-10 1/2\" at the residential (second) floor, which also matches the 12'-10 1/2\" [12.87] dimension in the Z-100 extract and a 451 SF dining room on a roughly 35' wide floorplate; 43'-10\" minus 21'-9 1/4\" = 22'-0 3/4\" at the commercial floors. 46'-4\" and 27'-9\" are more likely overall lengths or widths of the extension (27'-9\" [27.75] appears as a width on A-500), not depths of new construction. The scope bullet repeats the error.",
+   "correction": "Either state the dimensions as what they are on A-300 (e.g. overall extension length or width) or derive the depth of new construction from Z-100: about 12'-10 1/2\" at the second floor and about 22' at basement/first floor. Fix the scope bullet \"Rear extension at basement (46'-4\") and first/second floors (27'-9\")\" to match.",
+   "evidence": "s10: rear yard 43'-10\" to 30'-11 1/2\" (residential) and 21'-9 1/4\" (commercial); page 5 extract shows 12'-10 1/2\" [12.87] and 21'-9 1/4\" [21.77]; s17 451 SF dining room; page 17 extract shows 27'-9\" [27.75] next to the A-500 wall section."
+  },
+  {
+   "segmentId": "s3",
+   "severity": "major",
+   "kind": "recap-contradicts-segment",
+   "claim": "special inspections are on the bidder",
+   "problem": "The recap asserts a fact the segment does not. s3 says 'clarify who pays before you sign', and the questionsToAsk list asks 'Who carries special and progress inspection fees?'. The recap resolves an open question as settled, and in NYC the owner, not the contractor, normally retains the special inspection agency.",
+   "correction": "Recap: 'special inspections required; who pays is not stated, confirm before signing'.",
+   "evidence": "s3 body vs s3 recap; questionsToAsk item 1."
+  },
+  {
+   "segmentId": "s3",
+   "severity": "minor",
+   "kind": "top-down-order",
+   "claim": "change of use to an F-4 venue below two apartments",
+   "problem": "The term F-4 is first explained in s15 (page 11). The s3 recap uses it as though the viewer already knows it.",
+   "correction": "Recap: 'change of use to a bar/club venue below two apartments' and introduce F-4 in s15 as now.",
+   "evidence": "s15: 'occupancy group F-4, which covers restaurants, nightclubs, cabarets and dance halls'."
+  },
+  {
+   "segmentId": "s2",
+   "severity": "major",
+   "kind": "internal-inconsistency",
+   "claim": "Type 4 is a new exterior wall with steel studs, R-19 insulation and brick veneer",
+   "problem": "The script describes the new exterior wall three different ways without noting the conflict: s2 (steel studs, R-19, brick veneer), s5 (steel-frame walls R-13 cavity + R-10 continuous), s19 and s20 (2x6 wood studs at 16\" o.c. with R-19, brick veneer). Framing material and insulation package drive the framer's and energy inspector's price and the EN-100 compliance path; a bidder cannot tell which governs.",
+   "correction": "State that the legend, EN-100 and A-300/A-500 disagree on stud material (steel vs wood) and insulation (R-19 vs R-13 + R-10 ci), and add 'Which exterior wall assembly governs: steel stud R-13 + R-10 ci per EN-100 or 2x6 wood stud R-19 per A-300/A-500?' to questionsToAsk.",
+   "evidence": "s2 Type 4; s5 'Steel-frame walls get R-13 in the cavity plus R-10 continuous'; s19 '2 by 6 wood studs at 16 on center with R-19'; s20 'two story part in wood stud and brick veneer'; page 17 extract 'NEW EXTERIOR WALL ... 2\"x6\" WOOD STUDS SPACED AT 16 O.C.'"
+  },
+  {
+   "segmentId": "s5",
+   "severity": "minor",
+   "kind": "numeric-inconsistency",
+   "claim": "ceilings at R-38",
+   "problem": "s19 says the extension roof gets R-49. The two values may both be correct (table value vs detail value) but the script states them without reconciling, and the requirements bullet carries only R-38.",
+   "correction": "Note in s19 that A-300 calls for R-49 at the extension roof, exceeding the R-38 shown on EN-100, and that the higher value should be priced.",
+   "evidence": "s5 'ceilings at R-38'; s19 'extension roof is 2 by 10 joists with R-49'; requirements bullet 'ceiling R-38'."
+  },
+  {
+   "segmentId": "s8",
+   "severity": "major",
+   "kind": "simplification-distortion",
+   "claim": "the Department of Finance tax photo shows the front stairs are existing non-complying, which is why the stairs get modified in the demolition plans",
+   "problem": "A tax-photo note establishing an 'existing non-complying' condition is used to legalize and keep that condition, not to justify altering it. s12 gives the actual reason for the stair work: it is modified to comply with ADA. The causal link stated here is wrong and contradicts s12.",
+   "correction": "'A note cites the Department of Finance tax photo to show the front stair is a legal existing non-complying condition. Separately, the demolition plans modify that stair for ADA access.'",
+   "evidence": "s12: 'the exterior stair is modified to comply with ADA'."
+  },
+  {
+   "segmentId": "s14",
+   "severity": "major",
+   "kind": "internal-inconsistency",
+   "claim": "That is under 50 yards, so the design is exempt from the TR-2 and TR-3 concrete inspections",
+   "problem": "s3 says the special inspections table on T-100 includes cast-in-place concrete, and the requirements bullet lists 'Special inspections: concrete'. The script asserts both that concrete inspection is required and that the concrete work is exempt, without reconciling. TR-2/TR-3 (mix design and sampling) are different from the TR-1 special inspection for concrete; a bidder reading s14 may drop an inspection the set still requires.",
+   "correction": "'Under 50 CY, the concrete is exempt from TR-2 and TR-3 mix-design and sampling requirements, but the T-100 table still lists cast-in-place concrete as a special inspection, so carry that inspection unless the owner's inspection agency says otherwise.'",
+   "evidence": "s3 'cast-in-place concrete'; requirements bullet 1; s14."
+  },
+  {
+   "segmentId": "s15",
+   "severity": "major",
+   "kind": "arithmetic-inconsistency",
+   "claim": "The occupant load is capped at 75 people, 70 regular seats and 4 ADA positions",
+   "problem": "70 + 4 = 74, not 75. Either the seat counts are misread or the posted load includes a standing/staff count that is not mentioned.",
+   "correction": "Check the A-101 occupancy table and state the components that actually sum to 75 (e.g. seats, ADA positions, bar/standing, staff), or say '75 posted occupant load'.",
+   "evidence": "s15 body and callout '75 people, F-4'."
+  },
+  {
+   "segmentId": "s16",
+   "severity": "major",
+   "kind": "arithmetic-inconsistency",
+   "claim": "The occupant load here is 55 people, 30 regular seats plus 4 ADA positions",
+   "problem": "30 + 4 = 34, not 55. The 21-person difference (stage, back stage, standing, staff) is unexplained, so the number the reader would use for seating, restrooms and egress is ambiguous.",
+   "correction": "Break down the 55 as shown on the A-102 table (seats, ADA, stage/performers, standing, staff) or state only the posted load.",
+   "evidence": "s16 body; scope bullet 'for 75 + 55 people'."
+  },
+  {
+   "segmentId": "s15",
+   "severity": "major",
+   "kind": "simplification-distortion",
+   "claim": "which keeps it at the threshold for a place of assembly certificate",
+   "problem": "In NYC a Place of Assembly Certificate of Operation is required at 75 or more persons. An occupant load of 75 does not keep the space under or at a threshold that avoids anything; it triggers the PA certificate, and the combined 130 on two floors confirms a PA filing and FDNY involvement. The phrasing implies the opposite.",
+   "correction": "'At 75 the basement alone meets the Place of Assembly threshold, so a PA certificate, PA filing and FDNY inspection are required; budget for them.'",
+   "evidence": "s15 and s16 'Together the two floors hold 130 people'."
+  },
+  {
+   "segmentId": "s15",
+   "severity": "minor",
+   "kind": "numeric-imprecision",
+   "claim": "primary travel distance at 104 feet 5",
+   "problem": "The sheet reads 104'-4 1/2\".",
+   "correction": "'104 feet 4 and a half'",
+   "evidence": "Page 11 extract: 'TOTAL \"LEG A\" TRAVEL DISTANCE= 104'-4 1/2\"'."
+  },
+  {
+   "segmentId": "s18",
+   "severity": "major",
+   "kind": "internal-inconsistency",
+   "claim": "all in new brick veneer matching the existing",
+   "problem": "s20 says the single-story part of the extension is 8\" CMU with stucco outside, and s2 defines Type 6 as a stucco-finished exterior wall. The s20 recap then states both 'all brick veneer' and '8\" CMU with stucco' in consecutive bullets. The exterior finish split between mason, stucco and brick veneer subs is unresolved.",
+   "correction": "'Brick veneer on the two-story wood-framed part; stucco on the single-story CMU part' in s18, and amend the s20 recap bullet 1 to drop 'all brick veneer'.",
+   "evidence": "s2 Type 6; s20 'stucco outside for the single story part of the extension'; s20 recap bullets 1 and 2."
+  },
+  {
+   "segmentId": "s19",
+   "severity": "minor",
+   "kind": "callout-placement",
+   "claim": "The notes spell out the new exterior wall: three layers of half inch gypsum inside, 2 by 6 wood studs at 16 on center with R-19",
+   "problem": "The extracted text places the 'NEW EXTERIOR WALL' note (3 layers 1/2\" gypsum, 2x6 wood studs 16 o.c.) on page 17 (A-500), not page 15 (A-300). The callout 'New exterior wall build-up' on page 15 may point at nothing, or the note is duplicated.",
+   "correction": "Verify the note exists on A-300; otherwise move the wall build-up description and callout to s20.",
+   "evidence": "Page 17 extract: 'NEW EXTERIOR WALL: - INTERIOR 3 LAYERS 1/2\" GYPSUM BOARD - 2\"x6\" WOOD STUDS SPACED AT 16 O.C.'; page 15 extract contains no such text."
+  },
+  {
+   "segmentId": "s20",
+   "severity": "major",
+   "kind": "coverage-gap",
+   "claim": "A-500 blows the wall section up to half inch scale",
+   "problem": "The script jumps from page 15 (A-300) to page 17 (A-500) and never mentions page 16. s1 says the PDF has 19 sheets, so page 16 is a real sheet (likely A-400 or a front elevation/section) that the walkthrough silently skips while claiming the only missing sheet is T-101.",
+   "correction": "Add a segment for page 16, or state what it is and why it is not walked through.",
+   "evidence": "Segment page references: s19 page 15, s20 page 17; s1 'This PDF has 19 of them'."
+  },
+  {
+   "segmentId": "s1",
+   "severity": "minor",
+   "kind": "untraceable-summary",
+   "claim": "Drawing set dated 12/12/2017 (BizDesigns, project 1437)",
+   "problem": "No segment mentions a project number 1437.",
+   "correction": "Add the project number to s1 if it is on the title block, or drop it from keyDates.",
+   "evidence": "s1 gives firm, date, address, block and lot only."
+  },
+  {
+   "segmentId": "s11",
+   "severity": "minor",
+   "kind": "untraceable-summary",
+   "claim": "Shoring/bracing designed by a PE at contractor's expense (demo note 12)",
+   "problem": "s11 cites note 21 for hand demolition but gives no note number for shoring. 'Note 12' appears only in the summary.",
+   "correction": "Add the note number in s11 ('note 12 says you provide shoring...') or remove it from the requirements bullet.",
+   "evidence": "s11 body."
+  },
+  {
+   "segmentId": "s14",
+   "severity": "major",
+   "kind": "untraceable-summary",
+   "claim": "Foundation tie-in to existing walls with epoxied rebar, work next to an unexcavated zone",
+   "problem": "No segment mentions an unexcavated zone, crawl space or unexcavated area. The risk bullet introduces a site condition the walkthrough never establishes.",
+   "correction": "Either describe the unexcavated area in s7 or s14 if A-000/A-100 show one, or shorten the bullet to 'Foundation tie-in to existing walls with epoxied rebar; T-100 lists underpinning and excavation special inspections'.",
+   "evidence": "s7 and s14 bodies."
+  },
+  {
+   "segmentId": "s21",
+   "severity": "minor",
+   "kind": "untraceable-summary",
+   "claim": "Commercial kitchen hood, gas line and grease trap need MEP and FDNY coordination not shown here",
+   "problem": "No segment mentions a grease trap, and the gas line is shown on P-100 (s21 describes the 1\" black iron riser), so 'not shown here' is partly false.",
+   "correction": "'Kitchen hood, exhaust, fire suppression and any grease interceptor are not detailed in this set; gas riser is shown on P-100 but no mechanical sheets are included.'",
+   "evidence": "s15 lists hood and cooking equipment; s21 describes gas riser; no segment mentions a grease trap."
+  },
+  {
+   "segmentId": "s12",
+   "severity": "minor",
+   "kind": "question-may-be-answered",
+   "claim": "What happens to the existing tree and pond in the rear yard?",
+   "problem": "The pond is labeled on DM-101 (page 8), the demolition sheet, and s12 does not say what that sheet calls for. If DM-101 tags the pond for removal, the documents already answer the question. The script should report what the demo sheet says before asking.",
+   "correction": "State in s12 whether DM-101 shows the pond, pavers and tree as removed or retained; keep the question only for whatever is not tagged (likely the tree, which may need a Parks/tree-removal permit).",
+   "evidence": "Page 8 extract shows 'POND' on DM-101; s12 does not mention it."
+  },
+  {
+   "segmentId": "s1",
+   "severity": "minor",
+   "kind": "summary-overstates",
+   "claim": "Alteration Type 1: cellar-to-roof interior renovation of an existing 3-story building",
+   "problem": "s1 and the scope-of-work box say 'interior renovation from cellar to third floor'. 'Cellar-to-roof' implies roof work on the existing building that is not in the scope statement.",
+   "correction": "'cellar-to-third-floor interior renovation'",
+   "evidence": "s1; page 0 extract 'INTERIOR RENOVATION FROM CELLAR TO THIRD FLOOR'."
+  },
+  {
+   "segmentId": "s1",
+   "severity": "minor",
+   "kind": "definition",
+   "claim": "The use becomes a multi-family building",
+   "problem": "s10 says two dwelling units existing and proposed. In New York a multiple dwelling is three or more units; a two-unit building over commercial is a two-family (mixed-use) building. s4 repeats 'multi-family work'. If the sheet uses 'multi-family', quote it; otherwise the term misstates the building class the examiner applies.",
+   "correction": "'two apartments over a bar/club' or 'mixed-use two-family building'.",
+   "evidence": "s10 'Chart A shows two dwelling units existing and two proposed'; s4 'multi-family work'."
+  },
+  {
+   "segmentId": "s7",
+   "severity": "minor",
+   "kind": "numeric-imprecision",
+   "claim": "The cellar is open storage with a six foot ceiling",
+   "problem": "The A-000 extract shows ceiling-type dimensions of 6'-3\" and 5'-10\" in the cellar area, not 6'-0\". s14 repeats '6 foot ceiling'. If the ceiling varies between 5'-10\" and 6'-3\", that affects whether any part is habitable and how the sprinkler and ductwork fit.",
+   "correction": "Verify on A-000 and state the range (e.g. 'ceilings between 5 foot 10 and 6 foot 3').",
+   "evidence": "Page 3 extract: '6'-3\"' and '5'-10\"' near STORAGE; s7 callout 'Open cellar, 6'-0\" ceiling'."
+  },
+  {
+   "segmentId": "s10",
+   "severity": "minor",
+   "kind": "top-down-order",
+   "claim": "Z-100 is the zoning analysis, the sheet the Department of Buildings examiner reads first",
+   "problem": "The zoning analysis is overview material (lot, district, FAR, rear yards, unit count) but it is presented after three existing-condition floor plan segments, and the script itself says it is read first. The rear-yard numbers here are also what explain the extension depths used later.",
+   "correction": "Move s10 to directly after s1 (or after s6), before the existing plans.",
+   "evidence": "Segment order s7, s8, s9 (pages 3, 4, 6) then s10 (page 5)."
+  },
+  {
+   "segmentId": "s14",
+   "severity": "minor",
+   "kind": "imprecise",
+   "claim": "an occupant load of 4 and 3 persons",
+   "problem": "Two numbers with no rooms attached; the callout says 'Storage, 4 persons'. Unclear whether these are two storage rooms, storage plus utility, or existing vs proposed.",
+   "correction": "'occupant loads of 4 in the storage room and 3 in the utility room' (or whatever A-100 labels).",
+   "evidence": "s14 body and callout."
+  }
+ ]
+}

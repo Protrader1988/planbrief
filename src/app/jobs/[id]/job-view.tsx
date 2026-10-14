@@ -195,7 +195,7 @@ function Verification({ v }: { v: NonNullable<Job["verification"]> }) {
   const issues = [...v.reviewer.issues, ...v.auditor.issues];
   const verdictClass = v.summary.verdict === "pass" ? "done" : v.summary.verdict === "pass-with-notes" ? "live" : "error";
   const verdictText = v.summary.verdict === "pass" ? "Passed" : v.summary.verdict === "pass-with-notes" ? "Passed with notes" : "Needs review";
-  const unverified = m.segments.flatMap((s) => s.claims.filter((c) => c.status !== "verified").map((c) => ({ ...c, seg: s.title, page: s.page })));
+  const unverified = m.segments.flatMap((s) => s.claims.filter((c) => c.status === "unverified" || c.status === "elsewhere").map((c) => ({ ...c, seg: s.title, page: s.page })));
   return (
     <div className="card" style={{ marginTop: 16 }}>
       <div className="row" style={{ justifyContent: "space-between" }}>
@@ -208,7 +208,7 @@ function Verification({ v }: { v: NonNullable<Job["verification"]> }) {
       <div className="steps" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
         <div className="step ok">
           ✓ 1 · Figures vs. sheets
-          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{m.totals.verified} of {m.totals.claims} figures found on the cited sheet{m.totals.elsewhere ? `, ${m.totals.elsewhere} on another sheet` : ""}{m.totals.unverified ? `, ${m.totals.unverified} not found` : ""}</div>
+          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{m.totals.verified + m.totals.cited} of {m.totals.claims} figures found on the sheets{m.totals.derived ? `, ${m.totals.derived} derived` : ""}{m.totals.elsewhere ? `, ${m.totals.elsewhere} on another sheet` : ""}{m.totals.unverified ? `, ${m.totals.unverified} not found` : ""}</div>
         </div>
         <div className={`step ${v.reviewer.ran ? "ok" : ""}`}>
           {v.reviewer.ran ? "✓" : "–"} 2 · Architect/engineer review

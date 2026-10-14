@@ -10,12 +10,12 @@
 import type { Brief, Segment } from "./types";
 import type { PageInfo } from "./ingest";
 
-export type ClaimStatus = "verified" | "elsewhere" | "unverified";
+export type ClaimStatus = "verified" | "cited" | "derived" | "elsewhere" | "unverified";
 export type Claim = { text: string; kind: string; status: ClaimStatus; foundOnPage?: number };
 export type SegmentCheck = { id: string; title: string; page: number; claims: Claim[]; structural: string[] };
 export type MechanicalReport = {
   segments: SegmentCheck[];
-  totals: { claims: number; verified: number; elsewhere: number; unverified: number; structural: number };
+  totals: { claims: number; verified: number; cited: number; derived: number; elsewhere: number; unverified: number; structural: number };
 };
 
 // ---------- claim extraction ----------
@@ -28,7 +28,7 @@ const PATTERNS: Pattern[] = [
   // code sections: BC 1704.4, ZR 35-24, 27-531(h), Table 6-1, Section 303.1
   { kind: "code", re: /\b(?:BC|ZR|FC|MC|PC|LL|NYCECC|IBC|IRC|NEC|ASTM|ANSI|UL)\s?(?:DES\s)?[A-Z]?\s?\d+[\w.()-]*/g },
   // dimensions: 46'-4", 27'-9 1/2", 2'-0" x 1'-0", 12 inch, 5/8 inch
-  { kind: "dimension", re: /\b\d+\s?(?:'|ft|feet|foot)\s?-?\s?\d*\s?(?:\d\/\d)?\s?(?:"|in\b|inch(?:es)?)?/g },
+  { kind: "dimension", re: /\b\d+\s?(?:'|ft|feet|foot)\s?-?\s?\d*\s?(?:\d\/\d)?\s?(?:"|in\.|inch(?:es)?)?/g },
   { kind: "dimension", re: /\b\d+(?:\s\d\/\d)?\s?(?:"|inch(?:es)?|in\.)/g },
   { kind: "fraction", re: /\b\d\/\d\s?(?:"|inch)/g },
   // money
@@ -46,7 +46,7 @@ const PATTERNS: Pattern[] = [
   { kind: "class", re: /\b(?:group\s)?[A-Z]-\d\b/g },
   { kind: "ul", re: /\bUL\s?(?:DES\s?)?U?\s?\d{3,4}\b/g },
   // plain numbers with 2+ digits or decimals (catch-all, lower weight)
-  { kind: "number", re: /\b\d{2,}(?:,\d{3})*(?:\.\d+)?\b|\b\d+\.\d+\b/g },
+  { kind: "number", re: /\b\d{1,3}(?:,\d{3})+(?:\.\d+)?\b|\b\d{2,}(?:\.\d+)?\b|\b\d+\.\d+\b/g },
 ];
 
 const WORD_NUMBERS: Record<string, string> = {
@@ -82,7 +82,7 @@ function uniq<T>(xs: T[], key: (x: T) => string) {
   return xs.filter((x) => (seen.has(key(x)) ? false : (seen.add(key(x)), true)));
 }
 
-export function extractClaims(text: string): { text: string; kind: string }[] {
+export function extractClaims(text: string): { text: string; kind: string; start: number }[] {
   const out: { text: string; kind: string; start: number; end: number }[] = [];
   for (const p of PATTERNS) {
     for (const m of text.matchAll(p.re)) {
@@ -100,7 +100,32 @@ export function extractClaims(text: string): { text: string; kind: string }[] {
     if (last && c.start < last.end) continue;
     kept.push(c);
   }
-  return uniq(kept, (c) => c.kind + "|" + norm(c.text)).map(({ text, kind }) => ({ text, kind }));
+  return uniq(kept, (c) => c.kind + "|" + norm(c.text)).map(({ text, kind, start }) => ({ text, kind, start }));
+}
+
+/** The sheet number printed in a page's title block (last sheet-like token in the layout text). */
+export function sheetIdOf(text: string): string | null {
+  const m = text.match(/\b[A-Z]{1,3}-\d{2,3}(?:\.\d{1,2})?\b/g);
+  if (!m) return null;
+  return m[m.length - 1].replace(/\.00$/, "");
+}
+
+const DERIVED_WORDS = /\b(about|roughly|approximately|around|derived|together|total(?:s|ing)?|adds? up to|equals|that is|comes to|which is|leaving|difference|sum)\b/;
+
+/** True when the words just before the claim mark it as derived or approximate. */
+function isDerived(text: string, start: number): boolean {
+  return DERIVED_WORDS.test(text.slice(Math.max(0, start - 45), start).toLowerCase());
+}
+
+/** True when the sentence containing the claim names the sheet it was found on. */
+function citesSheet(text: string, start: number, sheetId: string | null): boolean {
+  if (!sheetId) return false;
+  const a = text.lastIndexOf(".", start) + 1;
+  let b = text.indexOf(".", start);
+  if (b < 0) b = text.length;
+  const sentence = text.slice(a, b).toUpperCase();
+  const base = sheetId.replace(/\.\d+$/, "");
+  return sentence.includes(base) || sentence.includes(base.replace("-", ""));
 }
 
 /** Variants of a claim that would count as a match in the page text. */
@@ -146,6 +171,8 @@ function variants(claim: string, kind: string): string[] {
   if (kind === "dimension" || kind === "fraction") {
     if (/^\d+'$/.test(n)) { v.add(n + "0"); v.add(n + "-0"); }
     if (/^\d+'\d+$/.test(n)) v.add(n.replace("'", "'-"));
+    const nf = n.replace(/\s\d\/\d"?$/, "").replace(/"$/, "");
+    if (nf !== n) { v.add(nf); v.add(nf.replace("'", "'-")); }
     v.add(n.replace(/"/g, "''"));
   }
   if (kind === "code") { v.add(n.replace(/\s+/g, " ")); v.add(n.replace(/\s+/g, "")); v.add(n.replace(/^\w+\s/, "")); }
@@ -216,7 +243,8 @@ export function mechanicalCheck(brief: Brief, pages: PageInfo[]): MechanicalRepo
   const pageText = pages.map((p) => norm(p.text || ""));
   const allText = pageText.join("\n");
   const segs: SegmentCheck[] = [];
-  const totals = { claims: 0, verified: 0, elsewhere: 0, unverified: 0, structural: 0 };
+  const totals = { claims: 0, verified: 0, cited: 0, derived: 0, elsewhere: 0, unverified: 0, structural: 0 };
+  const sheetIds = pages.map((p) => sheetIdOf(p.text || ""));
 
   for (const s of brief.segments) {
     const structural = structuralIssues(s, pages.length);
@@ -228,9 +256,12 @@ export function mechanicalCheck(brief: Brief, pages: PageInfo[]): MechanicalRepo
         if (findIn(pageText[s.page] ?? "", c.text, c.kind)) status = "verified";
         else if (findIn(allText, c.text, c.kind)) {
           foundOnPage = pageText.findIndex((t) => findIn(t, c.text, c.kind));
-          status = recap ? "verified" : "elsewhere"; // a recap summarizes several sheets
-        }
-        claims.push({ ...c, status, foundOnPage });
+          if (recap) status = "verified"; // a recap summarizes several sheets
+          else if (c.kind === "sheet") status = "verified"; // naming another sheet is a citation, not a claim about this page
+          else if (citesSheet(text, c.start, sheetIds[foundOnPage])) status = "cited";
+          else status = "elsewhere";
+        } else if (isDerived(text, c.start)) status = "derived";
+        claims.push({ text: c.text, kind: c.kind, status, foundOnPage });
         totals.claims++;
         totals[status]++;
       }

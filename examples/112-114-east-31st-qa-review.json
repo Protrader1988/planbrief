@@ -1,0 +1,162 @@
+{
+  "issues": [
+    {
+      "segmentId": "s19",
+      "severity": "critical",
+      "kind": "misread dimension / wrong element",
+      "claim": "46 feet 4 of extension at the basement and 27 feet 9 at the first and second floors",
+      "problem": "Neither dimension is an extension depth. On A-300 (and A-400, A-500) the 46'-4 1/4\" [46.35] line runs from the EXISTING/PROPOSED line (the existing upper-floor rear wall) to the rear lot line, and the 27'-9\" [27.75] line runs from the outer edge of the new second-floor balcony to the lot line. The basement extension itself is only about 23'-9\" deep plus a 1'-0\" wall (A-101 dimension string: 1'-8\" / 23'-9\" / 1'-0\" / 21'-9 1/4\" rear yard), and the first/second-floor extension is about 15'-5\" deep (Z-100 second-floor area B = 15.40 x 29.96 = 461.23 SF). Pricing a 46-foot-deep two-level extension roughly doubles the real scope.",
+      "correction": "Say: the section dimensions 46'-4 1/4\" and 27'-9\" are measured to the rear lot line (from the existing rear wall and from the new balcony edge). The new basement extension is about 23'-9\" deep leaving a 21'-9 1/4\" rear yard; the first/second-floor extension is about 15'-5\" deep (461 SF zoning floor area) leaving a 30'-11 1/2\" residential rear yard.",
+      "evidence": "A-300 and A-400: 46'-4 1/4\" dimension starts at the EXISTING | PROPOSED arrow and ends at LOT LINE; 27'-9\" starts at the balcony rail. A-101 top dimension string 23'-9\" / 1'-0\" / 21'-9 1/4\"; Z-100 yard table: commercial rear yard 21'-9 1/4\", residential rear yard 30'-11 1/2\"; Z-100 second floor B = 15.40 x 29.96 = 461.23 SF. Arithmetic: 23.75 + 1.0 + 21.77 = 46.5 ~ 46.35; 46.35 - 15.40 = 30.95 = 30'-11 1/2\"."
+    },
+    {
+      "segmentId": "s20",
+      "severity": "critical",
+      "kind": "wrong figure carried into recap",
+      "claim": "Extension steps back: 46'-4\" at basement, 27'-9\" above, all brick veneer",
+      "problem": "Recap repeats the misread depths from s19 and the 'all brick veneer' error from s18 (single-story part is 8\" CMU with stucco).",
+      "correction": "Extension: about 23'-9\" deep at the basement, about 15'-5\" deep at first and second floors; single-story part 8\" CMU with stucco, two-story part wood stud with brick veneer.",
+      "evidence": "A-300/A-400 dimension lines terminate at LOT LINE; A-500 '8\" C.M.U. W/ STUCCO FINISH' on the single-story wall; T-100 legend type 6 'EXTERIOR WALL ... PORTLAND CEMENT STUCCO'."
+    },
+    {
+      "segmentId": "summary",
+      "severity": "critical",
+      "kind": "wrong figure in summary lists",
+      "claim": "Rear extension at basement (46'-4\") and first/second floors (27'-9\") with new foundation",
+      "problem": "Same misread as s19: those numbers are distances to the rear lot line, not extension depths.",
+      "correction": "Rear extension about 23'-9\" deep at basement (1,218.78 SF added) and about 15'-5\" deep at first/second floors (449 SF and 461.23 SF added), per Z-100 floor area calculation.",
+      "evidence": "Z-100 FLOOR AREA CALCULATION: basement proposed 1218.78 SQ.FT., first floor proposed 449.00 SQ.FT., second floor proposed 461.23 SQ.FT.; A-300 dimension lines end at LOT LINE."
+    },
+    {
+      "segmentId": "s14",
+      "severity": "critical",
+      "kind": "sheet arithmetic conflict not flagged",
+      "claim": "under 1 foot thick, 4 foot tall foundation walls ... The concrete volume table totals 117 linear feet of new wall and 47.66 cubic yards",
+      "problem": "The table's wall line reads 'WALL 1' THICK X 4' TALL = 1 X 9 X 117.02 = 1052.85 CU FT'. The 47.66 CY total is computed with a 9-foot wall height, not 4 feet. If the wall is really 4' tall the volume is about 702 CF = 26 CY; if it is 9' tall (full cellar depth, which the sections suggest) the label is wrong. Either way the two numbers the script quotes cannot both be true, and the concrete and formwork price depends on which one is.",
+      "correction": "Say the table labels the wall '1' thick x 4' tall' but computes it at 9' tall (1 x 9 x 117.02 = 1,052.85 CF); the 47.66 CY total assumes a 9-foot wall. Confirm the wall height with the architect before pricing concrete.",
+      "evidence": "A-100 CONCRETE VOLUME CALCULATIONS: '2. WALL 1' THICK X 4' TALL = 1 X 9 X 117.02 = 1052.85 CU FT'; 'TOTAL = 1286.81 CU FT'; '47.66 CU YD = 1286.89 CU FT'. 1286.81 / 27 = 47.66."
+    },
+    {
+      "segmentId": "s15",
+      "severity": "major",
+      "kind": "wrong equipment count",
+      "claim": "two 6 burner gas ranges, a fryer and a flat top grill under a hood",
+      "problem": "The kitchen line is one 6-burner gas range, one gas deep fryer, one 3-burner gas work range and one flat top grill. The hood is labeled as an existing commercial kitchen hood, not new.",
+      "correction": "a 6 burner gas range, a gas deep fryer, a 3 burner gas work range and a flat top grill, under the existing commercial kitchen hood",
+      "evidence": "A-101 plan labels: '6 BURNER GAS RANGE', 'GAS DEEP FRYER', '3 BURNER GAS WORK RANGE', 'FLAT TOP GRILL & HOOD ABOVE', 'EXISTING COM. KITCHEN HOOD'. P-100 gas riser basement branch: NEW 6 BURNER GAS RANGE, NEW GAS DEEP FRYER, NEW 3 BURNER GAS WORK RANGE, NEW FLAT TOP GRILL."
+    },
+    {
+      "segmentId": "s15",
+      "severity": "major",
+      "kind": "wrong element identified / callout mislabel",
+      "claim": "Area E at the rear is the new extension on a new 4 inch reinforced slab over 6 inches of gravel",
+      "problem": "Area E (147.24 SF) is only the small rear room of the extension. The new construction at the basement includes Area B, Area C (361.29 SF) and Area E, and the slab note arrow points into Area C. The callout box 'Area E, new slab' at (0.65,0.23) sits on the slab note in the yard, not on Area E, which is at about (0.73-0.79, 0.46-0.50).",
+      "correction": "The rear extension at the basement is Areas B, C and E on a new 4\" reinforced concrete slab with 6x6-6/6 welded wire fabric, vapor barrier and 6\" gravel base. Move the callout to the Area E label or rename it 'New slab note'.",
+      "evidence": "A-101: 'NEW 4\" THICK REINFORCED CONC. FLOOR SLAB W/ 6X6-6/6 WELDED WIRE FABRIC VAPOR BARRIER & 6\" GRAVEL BASE' with leader into AREA C; 'AREA C 11'-4\" CEILING 361.29 SQ.FT.'; 'AREA E 13'-7\" CEILING 147.24 SQ.FT.'; new (type 5 and 4) wall symbols around Areas B, C and E."
+    },
+    {
+      "segmentId": "s15",
+      "severity": "major",
+      "kind": "misstated code threshold / sheet conflict not flagged",
+      "claim": "The occupant load is capped at 75 people, 70 regular seats and 4 ADA positions, which keeps it at the threshold for a place of assembly certificate",
+      "problem": "The sheet is internally inconsistent and the script papers over it. Note 2 says a place of assembly certificate is required at 75 or more people and claims 'PROPOSED 74 PEOPLE THEREFOR CERTIFICATE OF OPERATION NOT REQUIRED'; the seat count is 70 + 4 = 74; but the occupant load table and the posted sign say 75, and the capacity sign block says 'MAX. FLOOR OCCUPANCY = 113 PERSONS'. Whether a PA certificate is required is a cost and schedule decision.",
+      "correction": "Say: seats total 74 (70 regular + 4 ADA). Note 2 relies on 74 people to avoid a place of assembly certificate (required at 75 or more), but the occupant load table and the sign say 75 and the capacity sign block says 113. Get the number resolved before bid.",
+      "evidence": "A-101 NOTE 2: 'PLACE OF ASSEMBLY CERTIFICATE IS REQUIRED WHEN 75 OR MORE PEOPLE GATHER INDOORS. PROPOSED 74 PEOPLE THEREFOR CERTIFICATE OF OPERATION NOT REQUIRED'; SEATS table TOTAL SEATS 74; OCCUPANT LOAD 'MAX. OCCUPANT LOAD WILL BE LIMITED TO 75 PEOPLE'; CAPACITY SIGN 'MAX. FLOOR OCCUPANCY = 113 PERSONS'."
+    },
+    {
+      "segmentId": "s18",
+      "severity": "major",
+      "kind": "wrong material",
+      "claim": "all in new brick veneer matching the existing",
+      "problem": "Only the two-story part of the extension is brick veneer. The single-story part is 8\" CMU with a stucco finish (wall type 6), and the rear elevation draws that portion without brick hatch. Also the basement sliding doors are only on the two-story (south) bay, not 'full width'.",
+      "correction": "The two-story part of the extension is new brick veneer matching the existing; the single-story part is 8\" concrete block with a stucco finish. Sliding doors to the yard are at the two-story bay only.",
+      "evidence": "A-500: '8\" C.M.U. W/ STUCCO FINISH'; T-100 legend type 6 'NEW EXTERIOR WALL ... PORTLAND CEMENT STUCCO 3/4\" THICK APPLIED OVER STUCCO NETTING'; A-200 brick hatch and 'NEW BRICK FINISH' labels appear only on the right bay, left lower portion drawn unhatched."
+    },
+    {
+      "segmentId": "s21",
+      "severity": "major",
+      "kind": "wrong scope",
+      "claim": "The new work is on the basement and first floors: the commercial kitchen's 3 compartment sink, mop sink and dishwasher, the bar sinks, and the two restrooms",
+      "problem": "All fixtures marked NEW on the riser are at the basement (N.R sinks, mop sink, 3 comp. sink, commercial DW, 2 comp. sink). The restroom groups at the basement and first floor are marked EXISTING TO REMAIN (one lav and WC group marked EXISTING TO BE REMOVED at each level). There are no new fixtures at the first floor.",
+      "correction": "New plumbing fixtures are at the basement only: the kitchen 3 compartment sink, mop sink and commercial dishwasher, and the bar sinks. Restroom fixtures at basement and first floor are existing to remain, with one lavatory and water closet removed at each level.",
+      "evidence": "P-100 plumbing riser: basement 'NEW FIXTURES' group = N.R, MOP SINK, 3 COM. SINK, DW COM., N.R; second 'NEW FIXTURES' group = N.R, 2 COM. SINK, N.R; basement and 1st floor restroom groups labeled 'EXISTING TO REMAIN' and 'EXISTING TO BE REMOVED'. A-101 restrooms labeled 'EXISTING P.R 1' / 'P.R 2'; Table 16-1 note 'EXISTING NUMBER OF FIXTURES NON-COMPLYING AS PER EXISTING PA'."
+    },
+    {
+      "segmentId": "s3",
+      "severity": "minor",
+      "kind": "misclassified element / incomplete list",
+      "claim": "the special inspections a licensed agency has to perform: cast-in-place concrete, masonry, subgrade, underpinning, excavations, smoke control systems, fire-resistant penetrations, and the structural wood frame",
+      "problem": "Structural wood frame is listed on the sheet under PROGRESS INSPECTION CATEGORIES (BC 110.3.3), not special inspections. The special inspection list also includes subsurface conditions (fill placement and in-place density) and subsurface investigations (borings/test pits, TR4), plus energy code compliance (TR8) and fire resistance rated construction, which the script omits.",
+      "correction": "Special inspections: cast-in-place concrete, masonry, subgrade, subsurface conditions (fill placement/in-place density), subsurface investigations (borings/test pits, TR4), underpinning, smoke control, excavations, fire-resistant penetrations, energy code compliance (TR8) and fire resistance rated construction. Progress inspections: preliminary, footing and foundation, structural wood frame.",
+      "evidence": "T-100 INSPECTIONS table: 'SUBSURFACE CONDITIONS - FILL PLACEMENT & IN-PLACE DENSITY BC 1704.7.2', 'SUBSURFACE INVESTIGATIONS (BORINGS/TEST PITS) TR4 BC 1704.7.4', 'PROGRESS INSPECTION CATEGORIES ... STRUCTURAL WOOD FRAME BC 110.3.3', 'ENERGY CODE COMPLIANCE INSPECTIONS TR8 BC 110.3.5', 'FIRE RESISTANCE RATED CONSTRUCTION BC 110.3.4'."
+    },
+    {
+      "segmentId": "s3",
+      "severity": "minor",
+      "kind": "recap asserts what the sheet does not say",
+      "claim": "special inspections are on the bidder",
+      "problem": "The narration correctly says to clarify who pays; the recap states the inspections are on the bidder. The sheet does not assign responsibility.",
+      "correction": "Special inspections are listed; who pays for them is not stated, so ask.",
+      "evidence": "T-100 INSPECTIONS table lists items and code sections only; no responsibility note."
+    },
+    {
+      "segmentId": "s5",
+      "severity": "minor",
+      "kind": "sheet typo not flagged",
+      "claim": "ceilings at R-38",
+      "problem": "The energy table prints the ceiling value as 'R = 0.38' in both the proposed and prescriptive columns, which is a drawing typo for R-38. The script should not quote R-38 as if the sheet shows it cleanly.",
+      "correction": "Say the table reads 'Ceiling R-value: R = 0.38', an evident typo for R-38; confirm with the architect.",
+      "evidence": "EN-100 row 402.1.1: 'Ceiling R-value : R = 0.38' and 'Ceiling R-value :r = 0.38'. A-300 floor note separately reads 'CAVITY INSULATED TO R=38'."
+    },
+    {
+      "segmentId": "s10",
+      "severity": "minor",
+      "kind": "imprecise",
+      "claim": "the commercial rear yard to 21 feet 9 and a quarter",
+      "problem": "The commercial rear yard is 21'-9 1/4\" both existing and proposed; it does not change. Only the residential rear yard changes (43'-10\" to 30'-11 1/2\").",
+      "correction": "the commercial rear yard stays at 21 feet 9 and a quarter, existing and proposed, against 20 feet required",
+      "evidence": "Z-100 YARD REQ'S: REAR YARD (COMMERCIAL) required 20'-0\", existing 21'-9 1/4\", proposed 21'-9 1/4\", OK."
+    },
+    {
+      "segmentId": "s16",
+      "severity": "minor",
+      "kind": "existing elements implied as new",
+      "claim": "There is a new wheelchair lift at the front entry, an ADA bathroom, a kitchenette and a dressing room",
+      "problem": "The kitchenette and dressing room are labeled EXISTING on A-102; only the wheelchair lift is labeled NEW.",
+      "correction": "a new wheelchair lift at the front entry, an ADA bathroom, and the existing kitchenette and dressing room",
+      "evidence": "A-102: 'EXISTING KITCHENETTE 8'-1\" CEILING 32.88 SQ.FT.', 'EXISTING DRESSING ROOM 8'-1\" CEILING 109.01 SQ.FT.', 'NEW WHEELCHAIR LIFT'."
+    },
+    {
+      "segmentId": "s17",
+      "severity": "minor",
+      "kind": "sheet label conflict not flagged",
+      "claim": "The second floor apartment gains a 451 square foot dining room on top of the extension",
+      "problem": "A-103 labels the room 'EXISTING DINNING ROOM 451.24 SQ. FT.' even though it sits in the new extension (DM-102 removes the roof there and Z-100 adds 461.23 SF of second-floor area). The label is a drawing error a bidder should be told about.",
+      "correction": "Say the dining room (451.24 SF) is in the new extension even though A-103 mislabels it 'EXISTING'; Z-100 counts 461.23 SF of new second-floor area.",
+      "evidence": "A-103: 'EXISTING DINNING ROOM 7'-8\" CEILING 451.24 SQ. FT.'; Z-100 FLOOR AREA CALCULATION second floor proposed 461.23 SQ. FT.; DM-102 'ROOF TO BE REMOVED' at that location."
+    },
+    {
+      "segmentId": "s19",
+      "severity": "minor",
+      "kind": "sheet inconsistency not flagged",
+      "claim": "The extension roof is 2 by 10 joists with R-49 insulation under a waterproof membrane",
+      "problem": "The note reads '2X10\" WOOD JOISTS @16 O.C. - WITH 4 INCHES OF INSULATION R-49'. Four inches of insulation does not reach R-49; the depth and the R-value conflict.",
+      "correction": "2x10 joists at 16\" o.c.; the note calls for '4 inches of insulation R-49', which is inconsistent (R-49 needs roughly 14\" of batt or a high-density board), so confirm the product.",
+      "evidence": "A-300 and A-500 ceiling note: '-2X10\" WOOD JOISTS @16 O.C. - WITH 4 INCHES OF INSULATION R-49 -FINISH WATERPROOF MEMBRANE OVER 3/4\" PLYWOOD'."
+    }
+  ],
+  "coverage": [
+    "A-400 (Section B-B, page 16) is never cited. It shows the same extension in section and a new poured-concrete cellar egress stair at the front of the building.",
+    "A-100 shows new poured concrete work at the FRONT as well as the rear: a new stair enclosure and a window well with ladder, both tied to the existing with #5 epoxied dowels, plus direct vents and a 144 sq in fresh air intake for the mechanical room. The 117.02 LF of new wall includes these.",
+    "Footing size conflict: EN-100 foundation wall detail calls out a 2'-6\" x 1'-0\" footing with 3 #5 bars and #4 vertical bars at 64\" o.c.; A-100 and the concrete table use a 2'-0\" x 1'-0\" footing.",
+    "New exterior wall conflict: T-100 legend type 4 is 5 1/2\" steel studs with 3 layers of 5/8\" board and EN-100 lists 'new steel frame walls' at R-13 cavity + R-10 continuous, but A-300/A-500 specify 2x6 wood studs at 16\" o.c. with R-19 and 3 layers of 1/2\" board. The energy compliance path does not match the wall drawn. Type 1 partition is 2x6 on T-100 but 2x4 on the EN-100 detail.",
+    "Demolition note 24 says the demolition scope includes 'ALL WOOD JOISTS AND FRAMING, ALL MASONRY WHERE SHOWN'; note 20 puts all disposal fees on the contractor; note 30 tells the contractor to coordinate with HVAC, plumbing, electrical and structural drawings, which implies other drawings exist that are not in this set.",
+    "A new laundry room (104.27 SF) with washer/dryer and 2 compartment sink is built at the cellar (A-100), and two sump pumps are shown. The existing cellar also keeps a walk-in freezer, grease trap, 3 compartment sink and 2 compartment sink that remain in service.",
+    "New skylights: A-101 shows a 'NEW SKYLIGHT' strip beside Area C and 'SKYLIGHTS' over Area E (U-factor 0.60), in addition to the existing skylight that is retained.",
+    "First-floor capacity sign reads '55 PERSONS WITH MOVABLE SEATS OR 206 PERSONS STANDING'; the 'dangerous and unlawful' sign text on both A-101 and A-102 says 113 persons. These conflicts affect the PA filing.",
+    "Plumbing note 25 requires dry wells at locations on an SD 1-2 application filed with DEP; note 11 requires a watertight frost-proof water meter pit; the gas riser shows three gas meters (basement & 1st, 2nd, 3rd) and 3/4\" branches off 1\" risers.",
+    "Z-100 lists the building as Construction Class 3 non-fireproof under the old (1968) code, and the egress tables on A-101/A-102 are all 1968 BC references; that governs which fire-rating assemblies apply.",
+    "The pond, stone pavers and existing tree are shown retained on all proposed plans immediately beside the extension; new 'UP 2' steps lead from Area E to the yard.",
+    "A-101 note: 'AS PER BC 27-313 DOOR MAX. PROJECTION IS 18\"' at the front entry; ceiling heights in the venue are low (basement 7'-8\" to 8'-2\", Area C 11'-4\", Area E 13'-7\")."
+  ]
+}

@@ -110,7 +110,7 @@ async function narrateAndRender(jobId: string, brief: Brief) {
     const v = (await getJob(jobId))?.verification;
     const m = v?.mechanicalAfterFix ?? v?.mechanical;
     const verificationLine = m
-      ? `Verified: ${m.totals.verified} of ${m.totals.claims} figures matched to the sheets` +
+      ? `Verified: ${m.totals.verified + m.totals.cited} of ${m.totals.claims} figures matched to the sheets` +
         (v?.reviewer.ran && v?.auditor.ran ? "; independent architect/engineer review and consistency audit passed" : v?.reviewer.ran || v?.auditor.ran ? "; one independent review passed" : "")
       : undefined;
     const { total: durationSec, starts } = await renderVideo(brief, pages, {

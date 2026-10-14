@@ -162,7 +162,7 @@ export function mechanicalIssues(m: MechanicalReport): Issue[] {
           problem: `"${c.text}" was not found on sheet ${s.page + 1} or anywhere in the set.`,
           correction: "Use the value as printed on the sheet, or state plainly that it is derived (e.g. a sum) or not in the documents.",
           evidence: "text extraction of the set" });
-      } else if (c.status === "elsewhere" && c.foundOnPage != null) {
+      } else if (c.status === "elsewhere" && c.foundOnPage != null && c.kind !== "number") {
         out.push({ check: "mechanical", segmentId: s.id, severity: "minor", kind: c.kind, claim: c.text,
           problem: `"${c.text}" is not on sheet ${s.page + 1}; it appears on sheet ${c.foundOnPage + 1}.`,
           correction: "Name the sheet it comes from, or move the point to that sheet's segment.",

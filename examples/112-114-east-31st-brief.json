@@ -1,0 +1,1457 @@
+{
+  "projectName": "112-114 East 31st Street, Manhattan",
+  "documentType": "Plans",
+  "oneLiner": "An Alteration Type 1 filing set: a three-story building converted to a bar and performance venue on the lower floors with two apartments above, plus a stepped rear extension.",
+  "segments": [
+    {
+      "id": "s1",
+      "title": "1. What this project is",
+      "page": 0,
+      "focus": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "narration": "This is a 20-sheet filing set from BizDesigns, dated December 12, 2017, for 112 to 114 East 31st Street in Manhattan, block 886, lot 79. The scope of work box says it in one line: an Alteration Type 1 filing, which means the building's use changes, with an extension at the basement, first and second floors of an existing three-story building, and a full interior renovation from cellar to third floor. The use becomes a multi-family building with a service establishment with entertainment on the lower floors, which is a bar or club. The whole building gets sprinklered under a separate application. The drawing list shows 20 sheets. This PDF has 19 of them; sheet T-101, the notes and plot plan, is missing, so ask for it before you price.",
+      "callouts": [
+        {
+          "label": "Scope of work",
+          "box": {
+            "x": 0.645,
+            "y": 0.03,
+            "w": 0.24,
+            "h": 0.15
+          },
+          "cue": "The scope of work box"
+        },
+        {
+          "label": "Block 886, Lot 79",
+          "box": {
+            "x": 0.905,
+            "y": 0.395,
+            "w": 0.085,
+            "h": 0.04
+          },
+          "cue": "block 886"
+        },
+        {
+          "label": "Sprinklers, separate filing",
+          "box": {
+            "x": 0.645,
+            "y": 0.145,
+            "w": 0.24,
+            "h": 0.04
+          },
+          "cue": "sprinklered under a separate application"
+        },
+        {
+          "label": "Drawing list, 20 sheets",
+          "box": {
+            "x": 0.645,
+            "y": 0.62,
+            "w": 0.24,
+            "h": 0.25
+          },
+          "cue": "drawing list shows 20 sheets"
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "2. The six wall types",
+      "page": 0,
+      "focus": {
+        "x": 0.64,
+        "y": 0.24,
+        "w": 0.25,
+        "h": 0.42
+      },
+      "narration": "The symbol legend defines six wall types, and these drive your framing and drywall price. Type 1 is a half-hour interior partition of 2 by 6 wood studs with 5/8 inch gypsum board both sides, Type 2 is a two-hour partition with metal studs and two layers of Type X board, and Type 3 is a new 4,000 PSI poured concrete foundation wall. Type 4 is the new exterior wall, shown here as 5 1/2 inch steel studs with three layers of 5/8 inch board, R-19 insulation, 3/4 inch sheathing, a 1 inch air gap and brick veneer. Be aware that the set describes this exterior wall three different ways: this legend says steel studs with R-19, EN-100 calls for new steel frame walls at R-13 in the cavity plus R-10 continuous, and A-300 and A-500 draw 2 by 6 wood studs at 16 on center with R-19 and three layers of 1/2 inch board, so the framing material and the insulation package are unresolved and the energy compliance path does not match the wall drawn. Type 5 is a three-hour wall of 8 inch concrete block with furring, and Type 6 is a two-hour exterior wall finished in 3/4 inch portland cement stucco over netting. The note at the bottom says every partition uses 5/8 inch fire code gypsum board.",
+      "callouts": [
+        {
+          "label": "Type 1, half-hour wood stud",
+          "box": {
+            "x": 0.645,
+            "y": 0.255,
+            "w": 0.24,
+            "h": 0.045
+          },
+          "cue": "Type 1 is"
+        },
+        {
+          "label": "Type 2, 2-hr metal stud",
+          "box": {
+            "x": 0.645,
+            "y": 0.295,
+            "w": 0.24,
+            "h": 0.04
+          },
+          "cue": "Type 2 is"
+        },
+        {
+          "label": "Type 3, poured foundation",
+          "box": {
+            "x": 0.645,
+            "y": 0.335,
+            "w": 0.24,
+            "h": 0.035
+          },
+          "cue": "Type 3 is"
+        },
+        {
+          "label": "Type 4, steel stud here; wood on A-300/A-500",
+          "box": {
+            "x": 0.645,
+            "y": 0.365,
+            "w": 0.24,
+            "h": 0.045
+          },
+          "cue": "Type 4 is the new exterior wall"
+        },
+        {
+          "label": "Type 5, 3-hr CMU",
+          "box": {
+            "x": 0.645,
+            "y": 0.41,
+            "w": 0.24,
+            "h": 0.04
+          },
+          "cue": "Type 5 is"
+        },
+        {
+          "label": "Type 6, stucco exterior",
+          "box": {
+            "x": 0.645,
+            "y": 0.45,
+            "w": 0.24,
+            "h": 0.05
+          },
+          "cue": "Type 6 is"
+        },
+        {
+          "label": "5/8 fire code board everywhere",
+          "box": {
+            "x": 0.645,
+            "y": 0.505,
+            "w": 0.24,
+            "h": 0.035
+          },
+          "cue": "note at the bottom"
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "title": "3. Special inspections you will pay for",
+      "page": 0,
+      "focus": {
+        "x": 0.4,
+        "y": 0.48,
+        "w": 0.25,
+        "h": 0.46
+      },
+      "narration": "The inspections table lists the special inspections a licensed agency has to perform: cast-in-place concrete, masonry, subgrade, underpinning, excavations, smoke control systems, fire-resistant penetrations, and the structural wood frame. Below it are the energy code progress inspections: insulation, windows, air sealing, duct leakage and lighting. These are not optional and the owner usually expects the contractor to carry them, so clarify who pays before you sign.",
+      "callouts": [
+        {
+          "label": "Special inspections",
+          "box": {
+            "x": 0.405,
+            "y": 0.49,
+            "w": 0.235,
+            "h": 0.17
+          },
+          "cue": "special inspections a licensed agency"
+        },
+        {
+          "label": "Energy code progress inspections",
+          "box": {
+            "x": 0.405,
+            "y": 0.73,
+            "w": 0.235,
+            "h": 0.2
+          },
+          "cue": "energy code progress inspections"
+        }
+      ],
+      "recap": [
+        "Alt-1 filing: change of use to an F-4 venue below two apartments, with a rear extension",
+        "Six wall types and 5/8 fire code board everywhere; the exterior wall assembly conflicts between T-100, EN-100 and A-300/A-500",
+        "Special inspections required; who pays is not stated, confirm before signing",
+        "Sheet T-101 (notes and plot plan) is missing from this set"
+      ],
+      "recapTitle": "Overview and general sheets"
+    },
+    {
+      "id": "s4",
+      "title": "4. Accessibility sheet",
+      "page": 1,
+      "focus": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "narration": "Sheet T-102 is the accessibility sheet. Most of it is standard diagrams: door approach clearances, wheelchair turning space, and the adaptable bathroom and kitchen layouts New York requires in multi-family work. The part that costs money is the blocking. The toilets, tubs and showers call for wall reinforcement for future grab bars, 20 gauge metal plate behind the finish, and the kitchens need lowerable work surfaces with removable base cabinets. Price the blocking now; it is cheap before the drywall goes up and expensive after.",
+      "callouts": [
+        {
+          "label": "Door clearances",
+          "box": {
+            "x": 0.165,
+            "y": 0.03,
+            "w": 0.19,
+            "h": 0.44
+          },
+          "cue": "door approach clearances"
+        },
+        {
+          "label": "Adaptable bathroom",
+          "box": {
+            "x": 0.02,
+            "y": 0.5,
+            "w": 0.14,
+            "h": 0.27
+          },
+          "cue": "adaptable bathroom"
+        },
+        {
+          "label": "Grab bar reinforcement",
+          "box": {
+            "x": 0.17,
+            "y": 0.5,
+            "w": 0.23,
+            "h": 0.13
+          },
+          "cue": "wall reinforcement for future grab bars"
+        },
+        {
+          "label": "Adaptable kitchen notes",
+          "box": {
+            "x": 0.73,
+            "y": 0.77,
+            "w": 0.15,
+            "h": 0.19
+          },
+          "cue": "lowerable work surfaces"
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "5. Energy code numbers",
+      "page": 2,
+      "focus": {
+        "x": 0.02,
+        "y": 0.03,
+        "w": 0.31,
+        "h": 0.9
+      },
+      "narration": "EN-100 is the energy code tabular analysis. The numbers you need: new windows at a U-factor of 0.35 and ceilings at R-38. Steel-frame walls get R-13 in the cavity plus R-10 continuous. The new slab on grade at the basement gets R-10. Duct insulation is R-6 everywhere, and the circulating hot water piping is insulated to R-2 with an automatic shutoff on the pump. On the right side of the sheet the six wall types are drawn in plan at one and a half inches to the foot, so your framer can see every layer.",
+      "callouts": [
+        {
+          "label": "Windows U 0.35, ceiling R-38",
+          "box": {
+            "x": 0.025,
+            "y": 0.14,
+            "w": 0.3,
+            "h": 0.065
+          },
+          "cue": "U-factor of 0.35"
+        },
+        {
+          "label": "Steel frame walls R-13 + R-10",
+          "box": {
+            "x": 0.025,
+            "y": 0.215,
+            "w": 0.3,
+            "h": 0.07
+          },
+          "cue": "Steel-frame walls"
+        },
+        {
+          "label": "Slab R-10",
+          "box": {
+            "x": 0.025,
+            "y": 0.31,
+            "w": 0.3,
+            "h": 0.06
+          },
+          "cue": "slab on grade"
+        },
+        {
+          "label": "Ducts R-6",
+          "box": {
+            "x": 0.025,
+            "y": 0.615,
+            "w": 0.3,
+            "h": 0.06
+          },
+          "cue": "Duct insulation"
+        },
+        {
+          "label": "Hot water piping R-2",
+          "box": {
+            "x": 0.025,
+            "y": 0.7,
+            "w": 0.3,
+            "h": 0.07
+          },
+          "cue": "circulating hot water"
+        }
+      ]
+    },
+    {
+      "id": "s6",
+      "title": "6. Flood zone",
+      "page": 2,
+      "focus": {
+        "x": 0.33,
+        "y": 0.57,
+        "w": 0.56,
+        "h": 0.4
+      },
+      "narration": "The bottom right of the same sheet is the flood map. Note 1 says the property is in Zone X, an area of minimal flood hazard, under flood map 3604970201F. That matters because it means no flood-proofing requirements on the cellar and foundation work, which keeps the extension simpler.",
+      "callouts": [
+        {
+          "label": "FEMA flood map",
+          "box": {
+            "x": 0.34,
+            "y": 0.585,
+            "w": 0.31,
+            "h": 0.37
+          },
+          "cue": "flood map"
+        },
+        {
+          "label": "Zone X, minimal hazard",
+          "box": {
+            "x": 0.69,
+            "y": 0.7,
+            "w": 0.19,
+            "h": 0.05
+          },
+          "cue": "Zone X"
+        }
+      ]
+    },
+    {
+      "id": "s7",
+      "title": "7. Existing cellar and basement",
+      "page": 3,
+      "focus": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "narration": "Now the existing conditions, starting at the bottom of the building. Sheet A-000 shows the cellar and basement as they are today. The cellar is open storage with a six foot ceiling, not usable for living, with a utility room holding the boiler and three hot water heaters. The basement is currently offices with 7 foot and 7 foot 8 ceilings, a corridor and one small bathroom. Behind the building is a rear yard with stone pavers, a pond and an existing tree. That rear yard is where the extension goes, so look at it carefully.",
+      "callouts": [
+        {
+          "label": "Open cellar, 6'-0\" ceiling",
+          "box": {
+            "x": 0.29,
+            "y": 0.16,
+            "w": 0.09,
+            "h": 0.05
+          },
+          "cue": "The cellar is open storage"
+        },
+        {
+          "label": "Boiler + 3 water heaters",
+          "box": {
+            "x": 0.36,
+            "y": 0.17,
+            "w": 0.11,
+            "h": 0.07
+          },
+          "cue": "utility room"
+        },
+        {
+          "label": "Basement offices",
+          "box": {
+            "x": 0.32,
+            "y": 0.6,
+            "w": 0.09,
+            "h": 0.04
+          },
+          "cue": "basement is currently offices"
+        },
+        {
+          "label": "Rear yard, pond, tree",
+          "box": {
+            "x": 0.55,
+            "y": 0.53,
+            "w": 0.3,
+            "h": 0.4
+          },
+          "cue": "rear yard with stone pavers"
+        }
+      ]
+    },
+    {
+      "id": "s8",
+      "title": "8. Existing first and second floors",
+      "page": 4,
+      "focus": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "narration": "A-001 is the existing first and second floors. The first floor is also offices, with a big front room at a 10 foot 4 ceiling. The second floor is already an apartment: three bedrooms, kitchen, living room and two baths. A note cites the Department of Finance tax photo to show the front stair is a legal existing non-complying condition, which protects that condition rather than changing it. Separately, the demolition plans modify that stair for ADA access. Also note the existing fire escape on the left side; it stays.",
+      "callouts": [
+        {
+          "label": "Office 1, 10'-4\" ceiling",
+          "box": {
+            "x": 0.29,
+            "y": 0.13,
+            "w": 0.06,
+            "h": 0.03
+          },
+          "cue": "big front room"
+        },
+        {
+          "label": "Second floor apartment",
+          "box": {
+            "x": 0.19,
+            "y": 0.52,
+            "w": 0.32,
+            "h": 0.44
+          },
+          "cue": "second floor is already an apartment"
+        },
+        {
+          "label": "Tax photo note: stair existing non-complying",
+          "box": {
+            "x": 0.035,
+            "y": 0.605,
+            "w": 0.09,
+            "h": 0.035
+          },
+          "cue": "tax photo"
+        },
+        {
+          "label": "Existing fire escape",
+          "box": {
+            "x": 0.155,
+            "y": 0.68,
+            "w": 0.03,
+            "h": 0.04
+          },
+          "cue": "existing fire escape"
+        }
+      ]
+    },
+    {
+      "id": "s9",
+      "title": "9. Existing third floor",
+      "page": 6,
+      "focus": {
+        "x": 0.08,
+        "y": 0.27,
+        "w": 0.42,
+        "h": 0.5
+      },
+      "narration": "A-002 is the existing third floor, a second apartment with a master bedroom and bath, three more bedrooms, a kitchen with an existing skylight, and a study. It stays essentially as it is. The proposed sheet only adds the light and air tables we will see later.",
+      "callouts": [
+        {
+          "label": "Master bedroom",
+          "box": {
+            "x": 0.165,
+            "y": 0.395,
+            "w": 0.05,
+            "h": 0.03
+          },
+          "cue": "master bedroom"
+        },
+        {
+          "label": "Kitchen with skylight",
+          "box": {
+            "x": 0.3,
+            "y": 0.4,
+            "w": 0.05,
+            "h": 0.03
+          },
+          "cue": "existing skylight"
+        },
+        {
+          "label": "Study",
+          "box": {
+            "x": 0.39,
+            "y": 0.47,
+            "w": 0.04,
+            "h": 0.03
+          },
+          "cue": "a study"
+        }
+      ],
+      "recap": [
+        "Cellar is 6-foot storage; basement and first floor are offices today",
+        "Two apartments above stay; the rear yard with its tree and pond is where the extension goes"
+      ],
+      "recapTitle": "Existing conditions"
+    },
+    {
+      "id": "s10",
+      "title": "10. Zoning analysis",
+      "page": 5,
+      "focus": {
+        "x": 0.54,
+        "y": 0.03,
+        "w": 0.35,
+        "h": 0.95
+      },
+      "narration": "Z-100 is the zoning analysis, the sheet the Department of Buildings examiner reads first. The lot is in a C4-5A district, 3,974 square feet. The building goes from a floor area ratio of 2.02 to 2.56, well under the 4.0 allowed. The rear yard is the key number: the residential rear yard goes from 43 feet 10 to 30 feet 11 and a half, and the commercial rear yard to 21 feet 9 and a quarter, both compliant. Chart A shows two dwelling units existing and two proposed, so no new apartments. Everything in the compliance column says OK.",
+      "callouts": [
+        {
+          "label": "C4-5A, 3,974 SF lot",
+          "box": {
+            "x": 0.545,
+            "y": 0.06,
+            "w": 0.12,
+            "h": 0.09
+          },
+          "cue": "C4-5A district"
+        },
+        {
+          "label": "FAR 2.02 to 2.56",
+          "box": {
+            "x": 0.55,
+            "y": 0.26,
+            "w": 0.33,
+            "h": 0.11
+          },
+          "cue": "floor area ratio"
+        },
+        {
+          "label": "Rear yards compliant",
+          "box": {
+            "x": 0.55,
+            "y": 0.66,
+            "w": 0.33,
+            "h": 0.08
+          },
+          "cue": "rear yard is the key number"
+        },
+        {
+          "label": "2 units existing, 2 proposed",
+          "box": {
+            "x": 0.29,
+            "y": 0.77,
+            "w": 0.25,
+            "h": 0.14
+          },
+          "cue": "Chart A"
+        }
+      ]
+    },
+    {
+      "id": "s11",
+      "title": "11. Demolition notes and cellar demo",
+      "page": 7,
+      "focus": {
+        "x": 0.02,
+        "y": 0.03,
+        "w": 0.6,
+        "h": 0.95
+      },
+      "narration": "The demolition set starts with DM-100 and 35 demolition and protection notes. Read every one, because they put risk on the contractor: you accept the site as found, you provide shoring and bracing designed by a professional engineer at your own expense, you protect the facade and cornice, and note 21 says all masonry and concrete removal is by hand, no jackhammers or explosives. The cellar demolition itself is light: a stair comes out and a section of concrete wall is removed at the front.",
+      "callouts": [
+        {
+          "label": "35 demo and protection notes",
+          "box": {
+            "x": 0.02,
+            "y": 0.04,
+            "w": 0.2,
+            "h": 0.93
+          },
+          "cue": "35 demolition and protection notes"
+        },
+        {
+          "label": "Shoring by a PE, your cost",
+          "box": {
+            "x": 0.02,
+            "y": 0.34,
+            "w": 0.2,
+            "h": 0.06
+          },
+          "cue": "shoring and bracing"
+        },
+        {
+          "label": "Note 21: removal by hand",
+          "box": {
+            "x": 0.02,
+            "y": 0.655,
+            "w": 0.2,
+            "h": 0.025
+          },
+          "cue": "note 21"
+        },
+        {
+          "label": "Stair removed",
+          "box": {
+            "x": 0.29,
+            "y": 0.47,
+            "w": 0.04,
+            "h": 0.03
+          },
+          "cue": "a stair comes out"
+        },
+        {
+          "label": "Concrete wall removed",
+          "box": {
+            "x": 0.25,
+            "y": 0.675,
+            "w": 0.06,
+            "h": 0.03
+          },
+          "cue": "section of concrete wall"
+        }
+      ]
+    },
+    {
+      "id": "s12",
+      "title": "12. Basement and first floor demo",
+      "page": 8,
+      "focus": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "narration": "DM-101 is the basement and first floor demolition. Mostly partitions, doors and bathroom fixtures come out to open up the old office layout, and partial walls are cut to fit new doors into the rear yard. At the front, the exterior stair is modified to comply with ADA, the planter is removed and the access hatch is removed. On the first floor the interior walls around the old bathroom and offices come down. The big front rooms stay largely as they are.",
+      "callouts": [
+        {
+          "label": "Partial walls removed",
+          "box": {
+            "x": 0.16,
+            "y": 0.19,
+            "w": 0.06,
+            "h": 0.04
+          },
+          "cue": "partitions, doors and bathroom fixtures"
+        },
+        {
+          "label": "Walls cut for new rear doors",
+          "box": {
+            "x": 0.52,
+            "y": 0.37,
+            "w": 0.06,
+            "h": 0.04
+          },
+          "cue": "partial walls are cut"
+        },
+        {
+          "label": "Stair modified for ADA",
+          "box": {
+            "x": 0.07,
+            "y": 0.3,
+            "w": 0.06,
+            "h": 0.04
+          },
+          "cue": "exterior stair is modified"
+        },
+        {
+          "label": "Planter removed",
+          "box": {
+            "x": 0.1,
+            "y": 0.42,
+            "w": 0.05,
+            "h": 0.04
+          },
+          "cue": "planter is removed"
+        },
+        {
+          "label": "First floor walls removed",
+          "box": {
+            "x": 0.36,
+            "y": 0.81,
+            "w": 0.07,
+            "h": 0.06
+          },
+          "cue": "interior walls around the old bathroom"
+        }
+      ]
+    },
+    {
+      "id": "s13",
+      "title": "13. Second and third floor demo",
+      "page": 9,
+      "focus": {
+        "x": 0.1,
+        "y": 0.03,
+        "w": 0.55,
+        "h": 0.45
+      },
+      "narration": "DM-102 covers the second and third floors, and the only real demolition is at the rear: a section of the roof below is removed and partial walls are cut where the second floor opens into the new dining room extension. The third floor is essentially untouched; the existing apartment layout stays.",
+      "callouts": [
+        {
+          "label": "Roof to be removed",
+          "box": {
+            "x": 0.5,
+            "y": 0.25,
+            "w": 0.09,
+            "h": 0.11
+          },
+          "cue": "roof below is removed"
+        },
+        {
+          "label": "Wall cut for dining room",
+          "box": {
+            "x": 0.49,
+            "y": 0.17,
+            "w": 0.05,
+            "h": 0.03
+          },
+          "cue": "partial walls are cut"
+        }
+      ],
+      "recap": [
+        "35 demo notes shift risk to you: site as found, shoring by a PE, masonry removal by hand",
+        "Demolition is mostly partitions and fixtures; the rear roof section and front stair are the real items"
+      ],
+      "recapTitle": "Demolition"
+    },
+    {
+      "id": "s14",
+      "title": "14. Proposed cellar: the new foundation",
+      "page": 10,
+      "focus": {
+        "x": 0.08,
+        "y": 0.2,
+        "w": 0.72,
+        "h": 0.76
+      },
+      "narration": "Now the proposed work. A-100 is the proposed cellar, and it carries the foundation for the rear extension plus new poured concrete at the front: a new stair enclosure and a window well with ladder, both tied to the existing with number 5 epoxied dowels, along with direct vents and a 144 square inch fresh air intake for the mechanical room. The hatched walls are new 2 foot by 1 foot poured concrete footings with three number 5 bars under 1 foot thick foundation walls, tied to the existing with number 5 rebar epoxied in at 6 inches every 12 inches vertically, but note the EN-100 foundation detail calls out a 2 foot 6 by 1 foot footing with number 4 verticals at 64 inches, so the footing size conflicts between sheets. The concrete volume table totals 117.02 linear feet of new wall and 47.66 cubic yards, yet it labels the wall 1 foot thick by 4 feet tall and then computes it at 9 feet tall, 1 by 9 by 117.02 equals 1,052.85 cubic feet, so the 47.66 yard total assumes a 9 foot wall; confirm the wall height with the architect before pricing concrete and formwork. Under 50 cubic yards, the concrete is exempt from the TR-2 and TR-3 mix design and sampling requirements, but the T-100 table still lists cast-in-place concrete as a special inspection, so carry that inspection unless the owner's inspection agency says otherwise. The new walls run beside areas marked unexcavated on the plan and in the sections, which is why T-100 also lists underpinning and excavation inspections. The cellar stays storage with a 6 foot ceiling and occupant loads of 4 and 3 persons, a new laundry room with washer, dryer and 2 compartment sink goes in at the front, two sump pumps are shown, and the existing walk-in freezer, grease trap and kitchen sinks stay in service.",
+      "callouts": [
+        {
+          "label": "New front stair and window well",
+          "box": {
+            "x": 0.095,
+            "y": 0.33,
+            "w": 0.06,
+            "h": 0.35
+          },
+          "cue": "new stair enclosure"
+        },
+        {
+          "label": "New foundation walls",
+          "box": {
+            "x": 0.465,
+            "y": 0.26,
+            "w": 0.17,
+            "h": 0.21
+          },
+          "cue": "hatched walls are new"
+        },
+        {
+          "label": "#5 rebar, epoxied, 12\" o.c.",
+          "box": {
+            "x": 0.485,
+            "y": 0.28,
+            "w": 0.07,
+            "h": 0.03
+          },
+          "cue": "number 5 rebar epoxied"
+        },
+        {
+          "label": "47.66 CY, under 50",
+          "box": {
+            "x": 0.49,
+            "y": 0.78,
+            "w": 0.2,
+            "h": 0.15
+          },
+          "cue": "concrete volume table"
+        },
+        {
+          "label": "Wall labeled 4' tall, computed at 9'",
+          "box": {
+            "x": 0.49,
+            "y": 0.835,
+            "w": 0.2,
+            "h": 0.02
+          },
+          "cue": "computes it at 9 feet tall"
+        },
+        {
+          "label": "Unexcavated",
+          "box": {
+            "x": 0.6,
+            "y": 0.51,
+            "w": 0.1,
+            "h": 0.05
+          },
+          "cue": "marked unexcavated"
+        },
+        {
+          "label": "Storage, 4 persons",
+          "box": {
+            "x": 0.21,
+            "y": 0.39,
+            "w": 0.05,
+            "h": 0.05
+          },
+          "cue": "occupant loads of 4"
+        },
+        {
+          "label": "New laundry room",
+          "box": {
+            "x": 0.175,
+            "y": 0.26,
+            "w": 0.075,
+            "h": 0.045
+          },
+          "cue": "new laundry room"
+        }
+      ]
+    },
+    {
+      "id": "s15",
+      "title": "15. Proposed basement: the venue",
+      "page": 11,
+      "focus": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "narration": "A-101 is the proposed basement, and this is the money sheet. The offices become a place of assembly, occupancy group F-4, which covers restaurants, nightclubs, cabarets and dance halls, with a bar, a commercial kitchen with a 6 burner gas range, a gas deep fryer, a 3 burner gas work range and a flat top grill under the existing commercial kitchen hood, two restrooms labeled existing, and seating areas A through E. The rear extension at the basement is Areas B, C and E on a new 4 inch reinforced concrete slab with 6 by 6 welded wire fabric, vapor barrier and 6 inch gravel base, with new skylights beside Area C and over Area E, and ceilings are low throughout: 7 foot 8 to 8 foot 2 in the existing rooms, 11 foot 4 in Area C and 13 foot 7 in Area E. The occupancy numbers on this sheet do not agree: the seats table totals 74, 70 regular plus 4 ADA, and note 2 relies on 74 people to say a place of assembly certificate is not required, but the occupant load table and the large posted sign say 75, and the capacity sign block says maximum floor occupancy 113 persons with the small sign text below it also reading 113. At 75 the basement alone meets the Place of Assembly threshold, so a PA certificate, PA filing and FDNY inspection are required; get the governing number resolved before bid and budget for them. The egress tables show the primary travel distance at 104 feet 5 against 150 allowed, and an exit capacity of 327 against 75 needed.",
+      "callouts": [
+        {
+          "label": "Proposed bar",
+          "box": {
+            "x": 0.25,
+            "y": 0.12,
+            "w": 0.06,
+            "h": 0.03
+          },
+          "cue": "with a bar"
+        },
+        {
+          "label": "Kitchen line: range, fryer, work range, grill",
+          "box": {
+            "x": 0.34,
+            "y": 0.44,
+            "w": 0.14,
+            "h": 0.04
+          },
+          "cue": "commercial kitchen"
+        },
+        {
+          "label": "New slab note (Areas B, C, E)",
+          "box": {
+            "x": 0.65,
+            "y": 0.23,
+            "w": 0.07,
+            "h": 0.05
+          },
+          "cue": "new 4 inch reinforced concrete slab"
+        },
+        {
+          "label": "Area E, 13'-7\" ceiling",
+          "box": {
+            "x": 0.725,
+            "y": 0.455,
+            "w": 0.07,
+            "h": 0.05
+          },
+          "cue": "Areas B, C and E"
+        },
+        {
+          "label": "Seats total 74",
+          "box": {
+            "x": 0.175,
+            "y": 0.715,
+            "w": 0.11,
+            "h": 0.09
+          },
+          "cue": "seats table totals 74"
+        },
+        {
+          "label": "Note 2: 74 people, no PA certificate",
+          "box": {
+            "x": 0.665,
+            "y": 0.6,
+            "w": 0.2,
+            "h": 0.035
+          },
+          "cue": "note 2"
+        },
+        {
+          "label": "Occupant load table: 75",
+          "box": {
+            "x": 0.305,
+            "y": 0.58,
+            "w": 0.1,
+            "h": 0.18
+          },
+          "cue": "occupant load table and the large posted sign say 75"
+        },
+        {
+          "label": "Capacity sign: 113 persons",
+          "box": {
+            "x": 0.175,
+            "y": 0.58,
+            "w": 0.11,
+            "h": 0.12
+          },
+          "cue": "capacity sign block"
+        },
+        {
+          "label": "Travel distance OK",
+          "box": {
+            "x": 0.44,
+            "y": 0.76,
+            "w": 0.2,
+            "h": 0.13
+          },
+          "cue": "egress tables"
+        }
+      ]
+    },
+    {
+      "id": "s16",
+      "title": "16. Proposed first floor: stage level",
+      "page": 12,
+      "focus": {
+        "x": 0,
+        "y": 0,
+        "w": 1,
+        "h": 1
+      },
+      "narration": "A-102 is the proposed first floor, the upper level of the venue. The big front room becomes Area A with movable seats, then a stage with a 9 foot 10 ceiling, a back stage, and a balcony over the new extension. There is a new wheelchair lift at the front entry, an ADA bathroom, a kitchenette and a dressing room. The occupant load here is 55 people, and that number comes from floor area, 822.51 square feet of Areas A and B at 15 square feet per person for movable seating, not from the seat count, which is only 30 regular seats plus 4 ADA positions for 34 total. The capacity sign reads 55 persons with movable seats or 206 persons standing, while the sign text below it says 113, so this sheet carries the same unresolved numbers as A-101. Together the two floors post 130 people, which confirms a Place of Assembly filing, and both floors show exit door capacity and travel distances passing.",
+      "callouts": [
+        {
+          "label": "Stage, 9'-10\" ceiling",
+          "box": {
+            "x": 0.39,
+            "y": 0.18,
+            "w": 0.09,
+            "h": 0.04
+          },
+          "cue": "then a stage"
+        },
+        {
+          "label": "Back stage + balcony",
+          "box": {
+            "x": 0.52,
+            "y": 0.18,
+            "w": 0.15,
+            "h": 0.04
+          },
+          "cue": "a back stage"
+        },
+        {
+          "label": "New wheelchair lift",
+          "box": {
+            "x": 0.1,
+            "y": 0.395,
+            "w": 0.08,
+            "h": 0.035
+          },
+          "cue": "new wheelchair lift"
+        },
+        {
+          "label": "ADA bathroom",
+          "box": {
+            "x": 0.325,
+            "y": 0.42,
+            "w": 0.06,
+            "h": 0.03
+          },
+          "cue": "an ADA bathroom"
+        },
+        {
+          "label": "55 people, by area at 15 SF each",
+          "box": {
+            "x": 0.32,
+            "y": 0.57,
+            "w": 0.11,
+            "h": 0.19
+          },
+          "cue": "occupant load here is 55"
+        },
+        {
+          "label": "Seats 30 + 4 = 34",
+          "box": {
+            "x": 0.17,
+            "y": 0.72,
+            "w": 0.11,
+            "h": 0.09
+          },
+          "cue": "30 regular seats plus 4 ADA positions"
+        },
+        {
+          "label": "Capacity sign: 55 seated / 206 standing",
+          "box": {
+            "x": 0.17,
+            "y": 0.575,
+            "w": 0.11,
+            "h": 0.065
+          },
+          "cue": "capacity sign reads"
+        }
+      ]
+    },
+    {
+      "id": "s17",
+      "title": "17. Proposed second and third floors",
+      "page": 13,
+      "focus": {
+        "x": 0.05,
+        "y": 0.03,
+        "w": 0.82,
+        "h": 0.48
+      },
+      "narration": "A-103 is the proposed second and third floors. The second floor apartment gains a 451 square foot dining room on top of the extension, with a balcony, and every habitable room carries a light and air table showing its windows exceed the 10 percent minimum. The third floor is the existing apartment with the same tables added. Those tables are what the examiner uses to approve the bedrooms, so the window sizes are not negotiable.",
+      "callouts": [
+        {
+          "label": "New dining room, 451 SF",
+          "box": {
+            "x": 0.525,
+            "y": 0.15,
+            "w": 0.08,
+            "h": 0.04
+          },
+          "cue": "451 square foot dining room"
+        },
+        {
+          "label": "Balcony",
+          "box": {
+            "x": 0.6,
+            "y": 0.18,
+            "w": 0.04,
+            "h": 0.05
+          },
+          "cue": "with a balcony"
+        },
+        {
+          "label": "Light and air table",
+          "box": {
+            "x": 0.65,
+            "y": 0.08,
+            "w": 0.075,
+            "h": 0.08
+          },
+          "cue": "light and air table"
+        },
+        {
+          "label": "Third floor tables",
+          "box": {
+            "x": 0.52,
+            "y": 0.55,
+            "w": 0.09,
+            "h": 0.28
+          },
+          "cue": "third floor is the existing apartment"
+        }
+      ],
+      "recap": [
+        "New foundation: 117 LF of wall, 47.66 CY, under the 50 CY inspection threshold",
+        "Basement 75 people, first floor 55; egress and travel distances pass",
+        "Second floor gains a 451 SF dining room; light and air tables fixed"
+      ],
+      "recapTitle": "Proposed plans"
+    },
+    {
+      "id": "s18",
+      "title": "18. Rear elevation",
+      "page": 14,
+      "focus": {
+        "x": 0.25,
+        "y": 0.22,
+        "w": 0.45,
+        "h": 0.6
+      },
+      "narration": "A-200 is the proposed rear elevation, what the extension looks like from the yard. The extension steps back as it goes up: the basement level across the full width, then the first floor stage level with a balcony, then the second floor dining room with its own balcony. The two-story part of the extension on the right is new brick veneer matching the existing; the single-story part on the left is 8 inch concrete block with a stucco finish, wall type 6, which is why that portion is drawn without brick hatch. Sliding doors to the yard are at the two-story bay only, not across the full width. That split matters because the mason, the stucco sub and the brick veneer sub each price a different part of the same rear wall. The datum column on the left gives the floor elevations, from the cellar at 16.60 feet to the roof ridge at 65.94, with the base plane average at 24.19 feet.",
+      "callouts": [
+        {
+          "label": "Sliding doors, two-story bay only",
+          "box": {
+            "x": 0.49,
+            "y": 0.615,
+            "w": 0.13,
+            "h": 0.085
+          },
+          "cue": "Sliding doors to the yard"
+        },
+        {
+          "label": "First floor balcony",
+          "box": {
+            "x": 0.48,
+            "y": 0.57,
+            "w": 0.13,
+            "h": 0.04
+          },
+          "cue": "first floor stage level"
+        },
+        {
+          "label": "Dining room balcony",
+          "box": {
+            "x": 0.49,
+            "y": 0.44,
+            "w": 0.12,
+            "h": 0.05
+          },
+          "cue": "second floor dining room"
+        },
+        {
+          "label": "New brick finish, two-story part",
+          "box": {
+            "x": 0.415,
+            "y": 0.395,
+            "w": 0.045,
+            "h": 0.03
+          },
+          "cue": "new brick veneer"
+        },
+        {
+          "label": "Single-story part: CMU + stucco, no brick hatch",
+          "box": {
+            "x": 0.345,
+            "y": 0.52,
+            "w": 0.13,
+            "h": 0.18
+          },
+          "cue": "single-story part on the left"
+        },
+        {
+          "label": "Floor elevations",
+          "box": {
+            "x": 0.26,
+            "y": 0.25,
+            "w": 0.09,
+            "h": 0.55
+          },
+          "cue": "datum column"
+        }
+      ]
+    },
+    {
+      "id": "s19",
+      "title": "19. Section A-A",
+      "page": 15,
+      "focus": {
+        "x": 0.03,
+        "y": 0.17,
+        "w": 0.86,
+        "h": 0.68
+      },
+      "narration": "A-300 is section A-A, a vertical cut through the whole building, with the three existing stories over the cellar on the left and the stepped extension on the right. The two dimensions at the top, 46 feet 4 and a quarter and 27 feet 9, are measured to the rear lot line, the first from the existing rear wall at the existing-proposed line and the second from the edge of the new second floor balcony, so neither one is an extension depth and pricing a 46 foot deep extension would roughly double the real scope. Working from the A-101 dimension string and the Z-100 floor area table, the new basement extension is about 23 feet 9 deep, leaving a 21 foot 9 and a quarter commercial rear yard, and the first and second floor extension is about 15 feet 5 deep, 461 square feet of zoning floor area, leaving a 30 foot 11 and a half residential rear yard; the Z-100 yard arithmetic from the 43 foot 10 existing yard gives slightly smaller depths, about 22 feet and 12 foot 10 and a half, so field verify the existing rear wall before pricing. The notes spell out the new exterior wall as drawn here: three layers of half inch gypsum inside, 2 by 6 wood studs at 16 on center with R-19, three quarter inch exterior gypsum sheathing, a 1 inch air gap and 3 and 5/8 inch brick veneer, which conflicts with the steel stud wall in the T-100 legend and the R-13 plus R-10 continuous steel frame wall on EN-100. The extension roof is 2 by 10 joists with R-49 insulation under a waterproof membrane. The building stays at 41 foot 9, far under the 80 foot maximum.",
+      "callouts": [
+        {
+          "label": "46'-4 1/4\" and 27'-9\" run to the lot line",
+          "box": {
+            "x": 0.69,
+            "y": 0.27,
+            "w": 0.2,
+            "h": 0.085
+          },
+          "cue": "46 feet 4"
+        },
+        {
+          "label": "Existing / proposed line",
+          "box": {
+            "x": 0.515,
+            "y": 0.18,
+            "w": 0.1,
+            "h": 0.025
+          },
+          "cue": "existing-proposed line"
+        },
+        {
+          "label": "New exterior wall: 2x6 wood, R-19",
+          "box": {
+            "x": 0.7,
+            "y": 0.355,
+            "w": 0.1,
+            "h": 0.1
+          },
+          "cue": "notes spell out"
+        },
+        {
+          "label": "Roof: 2x10, R-49",
+          "box": {
+            "x": 0.75,
+            "y": 0.47,
+            "w": 0.1,
+            "h": 0.07
+          },
+          "cue": "extension roof"
+        },
+        {
+          "label": "Max height 80'-0\"",
+          "box": {
+            "x": 0.02,
+            "y": 0.42,
+            "w": 0.03,
+            "h": 0.12
+          },
+          "cue": "80 foot maximum"
+        }
+      ]
+    },
+    {
+      "id": "s19b",
+      "title": "20. Section B-B",
+      "page": 16,
+      "focus": {
+        "x": 0.1,
+        "y": 0.17,
+        "w": 0.8,
+        "h": 0.62
+      },
+      "narration": "A-400 is section B-B, a second vertical cut through the building taken nearer the party wall, so it passes through Area A, the stage and the back stage at the first floor, Areas A and B at the basement, and the dining room and balcony at the second floor. It carries the same 46 feet 4 and a quarter and 27 feet 9 dimensions to the rear lot line as A-300, so read them the same way, as distances to the lot line and not as extension depths. What this sheet adds is the front of the building: a new poured concrete cellar egress stair at the front, drawn hatched from the cellar up to grade, which is the front concrete work included in the A-100 volume table. At the rear, the basement extension sits on the 12 inch poured concrete wall at 4,000 PSI between areas marked unexcavated, the same wall A-500 details, and this section draws that wall running the full cellar depth, which supports the 9 foot height the A-100 table actually computes rather than the 4 feet it labels. The second floor dining room floor is finish flooring over 3/4 inch plywood with the cavity insulated to R-38 and continuous insulation to R-3, matching A-300. Price this sheet together with A-100, A-300 and A-500, because the concrete wall height is the biggest open number in the foundation package.",
+      "callouts": [
+        {
+          "label": "46'-4 1/4\" and 27'-9\" to lot line",
+          "box": {
+            "x": 0.66,
+            "y": 0.22,
+            "w": 0.2,
+            "h": 0.09
+          },
+          "cue": "46 feet 4 and a quarter"
+        },
+        {
+          "label": "New front cellar egress stair",
+          "box": {
+            "x": 0.165,
+            "y": 0.47,
+            "w": 0.05,
+            "h": 0.25
+          },
+          "cue": "new poured concrete cellar egress stair"
+        },
+        {
+          "label": "12\" poured conc, 4000 PSI",
+          "box": {
+            "x": 0.645,
+            "y": 0.695,
+            "w": 0.07,
+            "h": 0.035
+          },
+          "cue": "12 inch poured concrete wall"
+        },
+        {
+          "label": "Unexcavated",
+          "box": {
+            "x": 0.58,
+            "y": 0.655,
+            "w": 0.07,
+            "h": 0.03
+          },
+          "cue": "marked unexcavated"
+        },
+        {
+          "label": "Dining room floor: R-38 + R-3",
+          "box": {
+            "x": 0.555,
+            "y": 0.365,
+            "w": 0.08,
+            "h": 0.05
+          },
+          "cue": "finish flooring over 3/4 inch plywood"
+        }
+      ]
+    },
+    {
+      "id": "s20",
+      "title": "21. Wall section detail",
+      "page": 17,
+      "focus": {
+        "x": 0.15,
+        "y": 0.02,
+        "w": 0.6,
+        "h": 0.95
+      },
+      "narration": "A-500 blows the wall section up to half inch scale. From the bottom up: a 12 inch poured concrete wall at 4,000 PSI on the footing, then 8 inch concrete block with 7/8 inch furring channels inside and stucco outside for the single story part of the extension, roof joists anchored to the block with steel L bolts in grouted cells, and the two story part in 2 by 6 wood stud and brick veneer, the same wood stud wall as A-300 and the same conflict with the steel stud wall on T-100 and EN-100. The 27 foot 9 dimension across the top is the lot line dimension carried over from the sections, not the width of anything you build. The skylight over Area E is specified at a U-factor of 0.60, and the ceiling over Area C is 5/8 inch gypsum board on 2 by 10 wood joists at an 11 foot 4 ceiling height. This one sheet is what your mason, framer, stucco sub and roofer will all price from.",
+      "callouts": [
+        {
+          "label": "12\" poured conc, 4000 PSI",
+          "box": {
+            "x": 0.465,
+            "y": 0.845,
+            "w": 0.06,
+            "h": 0.03
+          },
+          "cue": "12 inch poured concrete"
+        },
+        {
+          "label": "8\" CMU, stucco",
+          "box": {
+            "x": 0.5,
+            "y": 0.5,
+            "w": 0.06,
+            "h": 0.03
+          },
+          "cue": "8 inch concrete block"
+        },
+        {
+          "label": "Joists anchored to CMU",
+          "box": {
+            "x": 0.465,
+            "y": 0.39,
+            "w": 0.1,
+            "h": 0.045
+          },
+          "cue": "roof joists anchored"
+        },
+        {
+          "label": "2x6 wood stud + brick veneer",
+          "box": {
+            "x": 0.36,
+            "y": 0.07,
+            "w": 0.13,
+            "h": 0.2
+          },
+          "cue": "two story part"
+        },
+        {
+          "label": "27'-9\" to lot line, not a wall width",
+          "box": {
+            "x": 0.47,
+            "y": 0.03,
+            "w": 0.12,
+            "h": 0.03
+          },
+          "cue": "27 foot 9 dimension"
+        },
+        {
+          "label": "Skylight U 0.60",
+          "box": {
+            "x": 0.6,
+            "y": 0.465,
+            "w": 0.09,
+            "h": 0.02
+          },
+          "cue": "skylight over Area E"
+        }
+      ],
+      "recap": [
+        "Extension: about 23'-9\" deep at the basement, about 15'-5\" at first and second floors; the 46'-4 1/4\" and 27'-9\" dimensions run to the lot line",
+        "Single-story part 8\" CMU with stucco; two-story part 2x6 wood stud with brick veneer (T-100/EN-100 show steel stud instead)",
+        "12\" poured wall labeled 4' tall but computed at 9' on A-100; confirm height before pricing concrete",
+        "Roof: 2x10 joists, R-49, membrane; skylight U 0.60; A-400 adds a new poured concrete front cellar stair"
+      ],
+      "recapTitle": "Elevation, sections and details"
+    },
+    {
+      "id": "s21",
+      "title": "22. Plumbing and gas risers",
+      "page": 18,
+      "focus": {
+        "x": 0.02,
+        "y": 0.03,
+        "w": 0.85,
+        "h": 0.6
+      },
+      "narration": "The last sheet, P-100, is the plumbing and gas riser diagram, which shows every fixture stacked floor by floor. Existing fixtures on the second and third floors remain, and the restroom groups at the basement and first floor are marked existing to remain, with one lavatory and water closet marked existing to be removed at each level, so there are no new restroom fixtures. The new plumbing fixtures are at the basement only: the commercial kitchen's 3 compartment sink, mop sink and commercial dishwasher, and the bar's 2 compartment sink with two non-residential sinks, all draining to a 5 inch house trap and a 5 inch extra heavy cast iron house sewer at a quarter inch per foot to the street. The gas riser shows three gas meters, for the basement and first floor, the second floor and the third floor, with 1 inch black iron risers and 3/4 inch branches, and a new basement cooking line feeding the 6 burner range, deep fryer, 3 burner work range and flat top grill, plus the existing water heaters and boiler. The notes require all new water closets at 1.6 gallons, sewer depth verification before you start, a watertight frost-proof water meter pit, and dry wells at locations on an SD 1-2 application filed with DEP, which is another filing not in this set.",
+      "callouts": [
+        {
+          "label": "Plumbing riser",
+          "box": {
+            "x": 0.1,
+            "y": 0.05,
+            "w": 0.35,
+            "h": 0.52
+          },
+          "cue": "every fixture stacked"
+        },
+        {
+          "label": "New fixtures, basement only",
+          "box": {
+            "x": 0.24,
+            "y": 0.33,
+            "w": 0.18,
+            "h": 0.08
+          },
+          "cue": "3 compartment sink"
+        },
+        {
+          "label": "5\" house trap + sewer",
+          "box": {
+            "x": 0.1,
+            "y": 0.51,
+            "w": 0.14,
+            "h": 0.04
+          },
+          "cue": "5 inch house trap"
+        },
+        {
+          "label": "Gas: 3 meters, new cooking line",
+          "box": {
+            "x": 0.56,
+            "y": 0.36,
+            "w": 0.14,
+            "h": 0.08
+          },
+          "cue": "gas riser shows"
+        },
+        {
+          "label": "Plumbing notes",
+          "box": {
+            "x": 0.02,
+            "y": 0.66,
+            "w": 0.66,
+            "h": 0.32
+          },
+          "cue": "The notes require"
+        }
+      ],
+      "recap": [
+        "New plumbing fixtures are at the basement only (kitchen 3 comp sink, mop sink, commercial DW, bar sinks) to a 5\" house trap and sewer; restrooms are existing to remain",
+        "Gas: three meters, 1\" black iron risers with 3/4\" branches, new basement cooking line",
+        "Verify sewer depth before starting; all new WCs 1.6 gal; water meter pit and DEP SD 1-2 dry wells are extra items and filings"
+      ],
+      "recapTitle": "Plumbing and gas"
+    }
+  ],
+  "summary": {
+    "scope": [
+      "Alteration Type 1: cellar-to-roof interior renovation of an existing 3-story building",
+      "Rear extension about 23'-9\" deep at basement (1,218.78 SF added) and about 15'-5\" deep at first/second floors (449 SF and 461.23 SF added) per Z-100, with new foundation; new poured concrete front cellar stair and window well",
+      "Basement + first floor become an F-4 place of assembly (bar, stage, commercial kitchen); posted occupant loads 75 + 55 (seat counts 74 and 34; capacity signs also read 113)",
+      "Second-floor apartment gains a 451 SF dining room and balcony; third-floor apartment stays",
+      "New wheelchair lift, ADA restrooms, ADA stair modification at front",
+      "Full sprinkler system filed under a separate application"
+    ],
+    "keyDates": [
+      "Drawing set dated 12/12/2017 (BizDesigns, project 1437)",
+      "No bid date, schedule or contract dates in this set; those come from the owner"
+    ],
+    "requirements": [
+      "Special inspections: concrete, masonry, subgrade, underpinning, excavation, smoke control, penetrations, wood frame",
+      "Energy code progress inspections (insulation, fenestration, air sealing, ducts, lighting)",
+      "Shoring/bracing designed by a PE at contractor's expense (demo note 12)",
+      "Masonry and concrete removal by hand, no jackhammers (demo note 21)",
+      "Energy: windows U 0.35, ceiling R-38, walls R-13 + R-10 ci per EN-100 (A-300/A-500 draw 2x6 wood stud R-19 instead), slab R-10, ducts R-6",
+      "All new water closets 1.6 gal; verify sewer depth before start",
+      "Place of Assembly certificate, PA filing and FDNY inspection at 75 or more occupants",
+      "Watertight frost-proof water meter pit (plumbing note 11) and DEP SD 1-2 dry wells (note 25)"
+    ],
+    "risks": [
+      "Sheet T-101 (notes and plot plan) is missing from this PDF",
+      "Foundation tie-in to existing walls with epoxied rebar; new walls run beside areas marked unexcavated and T-100 lists underpinning and excavation special inspections",
+      "A-100 concrete table labels the wall 4' tall but computes 47.66 CY at 9' tall; footing is 2'-0\" on A-100 but 2'-6\" on EN-100",
+      "Exterior wall assembly conflicts: steel stud (T-100 legend, EN-100 R-13 + R-10 ci) vs 2x6 wood stud R-19 (A-300/A-500)",
+      "Occupancy numbers conflict (74 seats, 75 posted, 113 on capacity signs); Place of Assembly certificate status is unresolved",
+      "Hand demolition of masonry and concrete is slow; price labor accordingly",
+      "Commercial kitchen hood, gas line and grease trap need MEP and FDNY coordination not shown here",
+      "Demo note 30 references HVAC, plumbing, electrical and structural drawings that are not in this set",
+      "Sprinklers are a separate filing and a separate cost",
+      "Existing tree and pond in the rear yard sit directly beside the extension and new slab"
+    ],
+    "questionsToAsk": [
+      "Who carries special and progress inspection fees?",
+      "Which exterior wall assembly governs: steel stud R-13 + R-10 ci per EN-100 or 2x6 wood stud R-19 per A-300/A-500?",
+      "Is the new 1'-0\" foundation wall 4' tall as labeled or 9' tall as computed in the A-100 concrete table, and is the footing 2'-0\" (A-100) or 2'-6\" (EN-100)?",
+      "What is the governing basement occupant load (74 seats, 75 posted, 113 on the capacity sign), and is a Place of Assembly certificate being filed?",
+      "Is there a structural set, or is the extension structure limited to what is on A-300/A-400/A-500?",
+      "Who holds the sprinkler, mechanical and electrical filings and contracts?",
+      "What happens to the existing tree and pond in the rear yard?",
+      "Is there a finish schedule or a spec book, or are finishes owner-selected?"
+    ]
+  }
+}
