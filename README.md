@@ -6,8 +6,10 @@ Upload an RFP, RFQ, drawing set or spec book. Get back a narrated video that wal
 
 1. **Read** – every page is rendered to an image and its text layer extracted (poppler).
 2. **Script** – Claude reads all pages (images + text) and writes a plain-English script: one segment per idea, each tied to a page, a camera focus box, and callouts (label + box + the phrase in the narration that triggers the pointer). Via Claude Code (subscription), a pasted script (manual), or the API.
-3. **Narrate** – each segment is voiced with Piper (free, offline) or OpenAI TTS.
-4. **Film** – frames are drawn on a canvas (camera moves, highlights, pointer, titles, progress bar) and piped into ffmpeg with the narration.
+3. **Narrate** – each segment is voiced sentence by sentence with Piper (free, offline) or OpenAI TTS, so caption and pointer timing come from the actual audio.
+4. **Film** – frames are drawn on a canvas at 1080p (camera zooms to each callout, highlights, pointer, captions, recap cards at the end of each discipline) and piped into ffmpeg with the narration.
+
+Sets over 24 pages run a two-pass script: an index pass that reads the whole set and plans chapters, then a detail pass per chapter with full-size images of only those sheets, so a 60-sheet set gets the same depth per sheet as a 10-sheet one (`ANALYZE_TWO_PASS_FROM`, `ANALYZE_DETAIL_BATCH`).
 
 Everything runs in one Node process with a file-backed job queue. No database required.
 
@@ -81,6 +83,6 @@ Railway: New Project → Deploy from GitHub repo → add a Volume mounted at `/d
 
 - Accounts and per-client workspaces (needed before selling it).
 - Background worker + object storage so renders can scale past one box.
-- Two-pass analysis for 100+ sheet sets (index pass, then per-discipline passes).
 - Re-render only the changed segment when a script is edited (today the whole video is re-filmed).
-- Subtitles burned in or as a .vtt track.
+- Export captions as a .vtt track alongside the burned-in ones.
+- Parallel frame rendering (today one core draws, the rest encode).

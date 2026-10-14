@@ -25,6 +25,10 @@ export type Segment = {
   /** Plain-English narration, spoken by TTS. */
   narration: string;
   callouts: Callout[];
+  /** Optional 1-3 takeaways shown on a recap card after this segment (end of a discipline). */
+  recap?: string[];
+  /** Heading for the recap card, e.g. "Existing conditions"; defaults to "Recap". */
+  recapTitle?: string;
 };
 
 export type Brief = {

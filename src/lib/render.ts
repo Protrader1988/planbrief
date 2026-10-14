@@ -5,6 +5,8 @@ import path from "node:path";
 import { createCanvas, loadImage, GlobalFonts, type Image, type SKRSContext2D } from "@napi-rs/canvas";
 import type { Brief, Box, Segment } from "./types";
 import type { PageInfo } from "./ingest";
+import type { Narration } from "./tts";
+import { chunkNarration } from "./captions";
 
 const run = promisify(execFile);
 
@@ -12,8 +14,8 @@ export type RenderOptions = {
   width?: number;
   height?: number;
   fps?: number;
-  /** per-segment audio files and durations, same order as brief.segments */
-  audio: { file: string; duration: number }[];
+  /** per-segment narration audio with chunk timing, same order as brief.segments */
+  audio: Narration[];
   outFile: string;
   workDir: string;
   /** burn captions into the lower third (default true) */
@@ -114,6 +116,8 @@ type Shot = {
   focus: View; // the segment's establishing view
   callouts: TimedCallout[];
   captions: Caption[];
+  recap: string[];
+  recapAt: number; // local time the recap card starts (= duration when none)
 };
 
 const INTRO = 3.4;
@@ -121,6 +125,7 @@ const OUTRO = 4.5;
 const MOVE = 1.0; // camera travel time
 const GAP = 0.7; // breathing room after narration ends
 const CALLOUT_MIN_SPACING = 2.2;
+const RECAP = 4.5; // seconds a recap card stays up
 
 function buildTimeline(brief: Brief, pages: PageInfo[], audio: RenderOptions["audio"], aspect: number) {
   const shots: Shot[] = [];
@@ -132,11 +137,14 @@ function buildTimeline(brief: Brief, pages: PageInfo[], audio: RenderOptions["au
     const focus = viewForBox(seg.focus, page, aspect, 0.06, 0.2);
     const full = viewForBox({ x: 0, y: 0, w: 1, h: 1 }, page, aspect, 0.01, 0);
     const from = prev && prevPage === page.index ? prev : full;
-    const narr = audio[i]?.duration ?? 5;
-    const duration = narr + MOVE + GAP;
-    const callouts = timeCallouts(seg, narr, page, aspect);
-    const captions = timeCaptions(seg.narration, narr);
-    shots.push({ seg, page, start: t, duration, narr, from, focus, callouts, captions });
+    const a = audio[i] ?? { file: "", duration: 5, chunks: chunkNarration(seg.narration).map((c) => ({ ...c, start: 0, duration: 5 })) };
+    const narr = a.duration;
+    const recap = (seg.recap ?? []).map((r) => String(r).trim()).filter(Boolean).slice(0, 4);
+    const recapAt = narr + MOVE + GAP;
+    const duration = recapAt + (recap.length ? RECAP : 0);
+    const callouts = timeCallouts(seg, a, page, aspect);
+    const captions = a.chunks.map((c) => ({ at: MOVE + c.start, text: c.text }));
+    shots.push({ seg, page, start: t, duration, narr, from, focus, callouts, captions, recap, recapAt });
     t += duration;
     prev = callouts.length ? callouts[callouts.length - 1].view : focus;
     prevPage = page.index;
@@ -144,67 +152,32 @@ function buildTimeline(brief: Brief, pages: PageInfo[], audio: RenderOptions["au
   return { shots, total: t + OUTRO };
 }
 
-/** Position in the spoken audio for a character offset in the narration. */
-function spokenTime(charIdx: number, textLen: number, narr: number) {
-  return MOVE + (charIdx / Math.max(1, textLen)) * narr;
+/** When a character offset of the narration is spoken, from the real chunk timings. */
+function spokenTime(a: Narration, charIdx: number, textLen: number) {
+  const ch = a.chunks;
+  let k = 0;
+  for (let i = 0; i < ch.length; i++) if (charIdx >= ch[i].charStart) k = i;
+  const c = ch[k];
+  const cLen = (k + 1 < ch.length ? ch[k + 1].charStart : textLen) - c.charStart;
+  const frac = cLen > 0 ? Math.min(1, Math.max(0, (charIdx - c.charStart) / cLen)) : 0;
+  return MOVE + c.start + frac * c.duration;
 }
 
-function timeCallouts(seg: Segment, narr: number, page: PageInfo, aspect: number): TimedCallout[] {
+function timeCallouts(seg: Segment, a: Narration, page: PageInfo, aspect: number): TimedCallout[] {
   const n = seg.narration;
   const lower = n.toLowerCase();
   const out = seg.callouts.map((c, i) => {
     const idx = c.cue ? lower.indexOf(c.cue.toLowerCase()) : -1;
-    const at = idx >= 0 ? spokenTime(idx, n.length, narr) : MOVE + ((i + 1) / (seg.callouts.length + 1)) * narr;
-    // Zoom so the detail is legible: pad the box, never tighter than 22% of the page width,
-    // and never wider than the segment's establishing view.
+    const at = idx >= 0 ? spokenTime(a, idx, n.length) : MOVE + ((i + 1) / (seg.callouts.length + 1)) * a.duration;
+    // Zoom so the detail is legible: pad the box, never tighter than 26% of the page width.
     const view = viewForBox(c.box, page, aspect, 0.45, 0.26);
     return { ...c, at: Math.max(at, MOVE + 0.6), view };
   });
-  out.sort((a, b) => a.at - b.at);
+  out.sort((x, y) => x.at - y.at);
   for (let i = 1; i < out.length; i++) {
     if (out[i].at < out[i - 1].at + CALLOUT_MIN_SPACING) out[i].at = out[i - 1].at + CALLOUT_MIN_SPACING;
   }
   return out;
-}
-
-function timeCaptions(narration: string, narr: number): Caption[] {
-  // split after sentence punctuation that is followed by whitespace (so 2.02 and 47.66 stay whole)
-  const sentences = narration.split(/(?<=[.!?]["')\]]*)\s+/).filter((x) => x.trim());
-  const out: Caption[] = [];
-  let idx = 0;
-  for (const s of sentences) {
-    const text = s.trim();
-    const start = narration.indexOf(text, idx);
-    idx = start + text.length;
-    for (const [chunk, off] of chunkCaption(text)) {
-      out.push({ at: spokenTime(start + off, narration.length, narr), text: chunk });
-    }
-  }
-  return out;
-}
-
-const CAPTION_MAX = 95; // characters that fit comfortably in two lines
-
-/** Splits a long sentence at clause boundaries; returns [text, offset-in-sentence]. */
-function chunkCaption(text: string, base = 0): [string, number][] {
-  if (text.length <= CAPTION_MAX) return [[text, base]];
-  const mid = text.length / 2;
-  const candidates = [...text.matchAll(/,\s|;\s|:\s|\s(?:and|but|so|which|then|with)\s/g)]
-    .map((m) => m.index! + (m[0].startsWith(" ") ? 0 : m[0].length - 1))
-    .filter((i) => i > 20 && i < text.length - 20);
-  let cut = -1;
-  let best = Infinity;
-  for (const i of candidates) if (Math.abs(i - mid) < best) { best = Math.abs(i - mid); cut = i; }
-  if (cut < 0) {
-    // no clause boundary: cut at the space nearest the middle
-    const sp = [...text.matchAll(/\s/g)].map((m) => m.index!).filter((i) => i > 20 && i < text.length - 20);
-    for (const i of sp) if (Math.abs(i - mid) < best) { best = Math.abs(i - mid); cut = i; }
-    if (cut < 0) return [[text, base]];
-  }
-  const left = text.slice(0, cut + 1).trim();
-  const rightStart = text.slice(cut + 1).search(/\S/) + cut + 1;
-  const right = text.slice(rightStart).trim();
-  return [...chunkCaption(left, base), ...chunkCaption(right, base + rightStart)];
 }
 
 /** Camera view for a shot at local time lt. */
@@ -426,6 +399,49 @@ function drawCard(ctx: SKRSContext2D, W: number, H: number, u: number, kicker: s
   ctx.restore();
 }
 
+function drawRecap(ctx: SKRSContext2D, W: number, H: number, u: number, title: string, bullets: string[], alpha: number) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(11,18,32,0.72)";
+  ctx.fillRect(0, 0, W, H);
+  const cw = Math.min(W * 0.74, 980 * u);
+  const padX = 44 * u;
+  ctx.font = `${22 * u}px ${FONT}`;
+  const lines: string[][] = bullets.map((b) => wrap(ctx, b, cw - padX * 2 - 34 * u).slice(0, 2));
+  const lh = 32 * u;
+  const bodyH = lines.reduce((n, l) => n + l.length * lh + 14 * u, 0);
+  const ch = 118 * u + bodyH;
+  const cx = (W - cw) / 2;
+  const cy = (H - ch) / 2;
+  ctx.shadowColor = "rgba(0,0,0,0.35)";
+  ctx.shadowBlur = 40 * u;
+  roundRect(ctx, cx, cy, cw, ch, 18 * u);
+  ctx.fillStyle = "#121a2e";
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = C.accent;
+  ctx.fillRect(cx + padX, cy + 40 * u, 44 * u, 5 * u);
+  ctx.fillStyle = C.muted;
+  ctx.font = `${16 * u}px ${FONT_BOLD}`;
+  ctx.textBaseline = "alphabetic";
+  ctx.fillText("KEY POINTS", cx + padX, cy + 72 * u);
+  ctx.fillStyle = C.white;
+  ctx.font = `${24 * u}px ${FONT_BOLD}`;
+  ctx.fillText(title.replace(/^\d+\.\s*/, ""), cx + padX, cy + 104 * u);
+  let y = cy + 118 * u + 24 * u;
+  ctx.font = `${22 * u}px ${FONT}`;
+  for (const l of lines) {
+    ctx.fillStyle = C.accent;
+    ctx.beginPath();
+    ctx.arc(cx + padX + 8 * u, y - 8 * u, 5 * u, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.fillStyle = "rgba(255,255,255,0.9)";
+    l.forEach((line, i) => ctx.fillText(line, cx + padX + 34 * u, y + i * lh));
+    y += l.length * lh + 14 * u;
+  }
+  ctx.restore();
+}
+
 // ---------- main ----------
 export async function renderVideo(brief: Brief, pages: PageInfo[], opts: RenderOptions): Promise<{ total: number; starts: number[] }> {
   const W = opts.width ?? 1920;
@@ -555,6 +571,11 @@ export async function renderVideo(brief: Brief, pages: PageInfo[], opts: RenderO
       }
 
       drawChrome(ctx, W, H, u, s.seg.title, `Sheet ${s.page.index + 1} of ${pages.length}`, t / total);
+      if (s.recap.length && lt >= s.recapAt) {
+        const age = lt - s.recapAt;
+        const left = s.duration - lt;
+        drawRecap(ctx, W, H, u, s.seg.recapTitle || "Recap", s.recap, Math.min(1, age / 0.35, left / 0.35));
+      }
     }
 
     await write(Buffer.from(ctx.getImageData(0, 0, W, H).data.buffer));

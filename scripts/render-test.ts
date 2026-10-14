@@ -7,7 +7,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { ingestPdf } from "../src/lib/ingest";
 import { analyzePages, normalizeBrief } from "../src/lib/analyze";
-import { synthesize } from "../src/lib/tts";
+import { synthesizeNarration } from "../src/lib/tts";
 import { renderVideo } from "../src/lib/render";
 import type { Brief } from "../src/lib/types";
 
@@ -38,7 +38,7 @@ await fs.writeFile(path.join(work, "brief.json"), JSON.stringify(brief, null, 2)
 const audio = [];
 for (let i = 0; i < brief.segments.length; i++) {
   const file = path.join(work, "audio", `seg-${i}.mp3`);
-  audio.push({ file, duration: await synthesize(brief.segments[i].narration, file) });
+  audio.push(await synthesizeNarration(brief.segments[i].narration, file));
 }
 
 console.time("render");

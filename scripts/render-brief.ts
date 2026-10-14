@@ -6,7 +6,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { ingestPdf } from "../src/lib/ingest";
 import { normalizeBrief } from "../src/lib/analyze";
-import { synthesize, probeDuration } from "../src/lib/tts";
+import { synthesizeNarration, type Narration } from "../src/lib/tts";
 import { renderVideo } from "../src/lib/render";
 
 async function main() {
@@ -19,11 +19,17 @@ async function main() {
   const pages = await ingestPdf(pdf, path.join(work, "pages"));
   const brief = normalizeBrief(JSON.parse(await fs.readFile(briefFile, "utf8")), pages.length);
 
-  const audio = [];
+  const audio: Narration[] = [];
   for (let i = 0; i < brief.segments.length; i++) {
     const file = path.join(work, "audio", `seg-${i}.mp3`);
-    const cached = await fs.stat(file).then(() => true).catch(() => false);
-    audio.push({ file, duration: cached ? await probeDuration(file) : await synthesize(brief.segments[i].narration, file) });
+    const meta = file + ".json";
+    const cached = await fs.readFile(meta, "utf8").then((x) => JSON.parse(x) as Narration & { text: string }).catch(() => null);
+    if (cached && cached.text === brief.segments[i].narration && (await fs.stat(file).catch(() => null))) audio.push(cached);
+    else {
+      const n = await synthesizeNarration(brief.segments[i].narration, file);
+      await fs.writeFile(meta, JSON.stringify({ ...n, text: brief.segments[i].narration }));
+      audio.push(n);
+    }
     process.stdout.write(`narrated ${i + 1}/${brief.segments.length} (${audio[i].duration.toFixed(1)}s)\n`);
   }
   const r = await renderVideo(brief, pages, {

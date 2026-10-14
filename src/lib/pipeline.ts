@@ -4,7 +4,7 @@ import { getJob, jobDir, updateJob } from "./jobs";
 import { ingestPdf, type PageInfo } from "./ingest";
 import { analyzePages, analysisPrompt, ANALYZE_PROVIDER, normalizeBrief, parseJsonLoose } from "./analyze";
 import type { Brief } from "./types";
-import { synthesize } from "./tts";
+import { synthesizeNarration, type Narration } from "./tts";
 import { renderVideo } from "./render";
 
 /** Simple in-process queue: one render at a time keeps CPU and memory sane. */
@@ -75,11 +75,10 @@ async function narrateAndRender(jobId: string, brief: Brief) {
 
     // 3. narrate
     await updateJob(jobId, { status: "narrating", progress: 46, message: "Recording narration" });
-    const audio: { file: string; duration: number }[] = [];
+    const audio: Narration[] = [];
     for (let i = 0; i < brief.segments.length; i++) {
       const file = path.join(dir, "audio", `seg-${i}.mp3`);
-      const duration = await synthesize(brief.segments[i].narration, file);
-      audio.push({ file, duration });
+      audio.push(await synthesizeNarration(brief.segments[i].narration, file));
       await updateJob(jobId, {
         progress: 46 + Math.round(((i + 1) / brief.segments.length) * 14),
         message: `Narrating part ${i + 1} of ${brief.segments.length}`,

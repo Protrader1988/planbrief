@@ -5,6 +5,8 @@ import type { PageInfo } from "./ingest";
 
 const MODEL = process.env.ANTHROPIC_MODEL || "claude-sonnet-5-5";
 const MAX_IMAGES = Number(process.env.ANALYZE_MAX_IMAGES || 40);
+const TWO_PASS_FROM = Number(process.env.ANALYZE_TWO_PASS_FROM || 24); // page count above which the API runs index + detail passes
+const DETAIL_BATCH = Number(process.env.ANALYZE_DETAIL_BATCH || 6); // pages per detail call
 const MAX_TEXT_PER_PAGE = Number(process.env.ANALYZE_MAX_TEXT_PER_PAGE || 6000);
 
 const SYSTEM = `You are a senior preconstruction manager who explains construction documents to people who have never read one: owners, new estimators, subcontractors, investors.
@@ -19,6 +21,7 @@ Rules for the script:
 - The camera: give a "focus" box (fractions of the page: x, y from the top-left, w, h) for the region the viewer should be looking at. Use the whole page {x:0,y:0,w:1,h:1} for overviews, and tight boxes (w and h between 0.15 and 0.5) for details like a schedule, a detail callout, a note block or a dimension string.
 - Callouts: for each segment list 1 to 5 things the on-screen pointer should land on while you talk about them. Each callout has a short label, a box on the page (fractions, inside or near the focus box) and a "cue": a short phrase copied VERBATIM from that segment's narration. The pointer jumps to the callout when the narration reaches the cue, so the cue must appear exactly in the narration text.
 - Order: overview first, then site / existing conditions, then structure, then envelope, then interiors and finishes, then MEP and fire protection, then schedule and phasing, then bid requirements and commercial terms, then red flags and questions to ask. Adapt the order to what is actually in the package.
+- Recaps: on the LAST segment of each discipline (end of the overview, end of existing conditions, end of demolition, end of the proposed plans, end of MEP, and so on) add "recap": 2 to 3 short takeaways a bidder must remember. Leave recap out of the other segments.
 - Also fill the summary lists (scope, key dates, requirements, risks, questions to ask) in short bullet phrases.`;
 
 const TOOL: Anthropic.Tool = {
@@ -41,6 +44,8 @@ const TOOL: Anthropic.Tool = {
             page: { type: "integer", description: "0-based page index" },
             focus: boxSchema("Camera target on the page."),
             narration: { type: "string" },
+            recap: { type: "array", items: { type: "string" }, description: "2-3 takeaways; only on the last segment of a discipline." },
+            recapTitle: { type: "string", description: "Name of the discipline the recap closes, e.g. 'Existing conditions'." },
             callouts: {
               type: "array",
               items: {
@@ -102,7 +107,8 @@ Return ONLY a JSON object with this shape, no prose before or after:
 {
   "projectName": string, "documentType": "RFP"|"RFQ"|"Plans"|"Specs"|"Mixed"|"Other", "oneLiner": string,
   "segments": [{ "title": string, "page": number, "focus": {"x","y","w","h"}, "narration": string,
-                 "callouts": [{ "label": string, "box": {"x","y","w","h"}, "cue": string }] }],
+                 "callouts": [{ "label": string, "box": {"x","y","w","h"}, "cue": string }],
+                 "recap": string[], "recapTitle": string (both optional, only on the last segment of a discipline) }],
   "summary": { "scope": string[], "keyDates": string[], "requirements": string[], "risks": string[], "questionsToAsk": string[] }
 }`;
 }
@@ -113,6 +119,7 @@ export async function analyzePages(pages: PageInfo[], originalName: string): Pro
   if (ANALYZE_PROVIDER === "manual") throw new Error("manual provider is handled by the pipeline");
   if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set");
   const client = new Anthropic();
+  if (pages.length > TWO_PASS_FROM) return analyzeTwoPass(client, pages, originalName);
 
   const content: Anthropic.ContentBlockParam[] = [
     {
@@ -174,6 +181,7 @@ export function normalizeBrief(raw: Brief, pageCount: number): Brief {
       focus,
       narration: s.narration.trim(),
       callouts,
+      ...(Array.isArray(s.recap) && s.recap.length ? { recap: s.recap.map(String).slice(0, 4), recapTitle: s.recapTitle ? String(s.recapTitle).slice(0, 60) : undefined } : {}),
     });
   });
   if (!segments.length) throw new Error("Brief had no usable segments");
@@ -256,7 +264,7 @@ Materials on disk:
 - Page images (open each with the Read tool and look at it carefully; the boxes you return must match what you see):
 ${imageList}
 
-Read the text file and every listed image, then write the JSON object to ${outFile} with the Write tool. Write nothing else.`;
+Read the text file and every listed image. For sets over 24 pages, first decide the chapters (overview, existing, demolition, proposed, MEP, and so on), then write each chapter's segments page by page; the result must still be ONE JSON object. Write it to ${outFile} with the Write tool. Write nothing else.`;
 
   const bin = process.env.CLAUDE_CODE_BIN || "claude";
   await new Promise<void>((resolve, reject) => {
@@ -287,4 +295,116 @@ export function parseJsonLoose(raw: string): Brief {
     if (!m) throw new Error("No JSON object found in the script");
     return JSON.parse(m[0]);
   }
+}
+
+// ---------- two-pass analysis for large sets ----------
+
+const OUTLINE_TOOL: Anthropic.Tool = {
+  name: "write_outline",
+  description: "Return the project overview and a top-down chapter list for the video.",
+  input_schema: {
+    type: "object",
+    required: ["projectName", "documentType", "oneLiner", "chapters", "summary"],
+    properties: {
+      projectName: { type: "string" },
+      documentType: { type: "string", enum: ["RFP", "RFQ", "Plans", "Specs", "Mixed", "Other"] },
+      oneLiner: { type: "string" },
+      chapters: {
+        type: "array",
+        description: "In the order the video should run: overview, site, structure, envelope, interiors, MEP, schedule, bid terms, red flags.",
+        items: {
+          type: "object",
+          required: ["title", "pages", "goal"],
+          properties: {
+            title: { type: "string" },
+            pages: { type: "array", items: { type: "integer" }, description: "0-based page indexes this chapter is filmed on, in order." },
+            goal: { type: "string", description: "What the viewer must understand after this chapter, with the specific numbers/sheets to cover." },
+            isDisciplineEnd: { type: "boolean", description: "True when this chapter closes a discipline and should end with a recap." },
+          },
+        },
+      },
+      summary: (TOOL.input_schema.properties as Record<string, unknown>).summary,
+    },
+  },
+};
+
+const SEGMENTS_TOOL: Anthropic.Tool = {
+  name: "write_segments",
+  description: "Return the segments for one chapter.",
+  input_schema: {
+    type: "object",
+    required: ["segments"],
+    properties: { segments: (TOOL.input_schema.properties as Record<string, unknown>).segments },
+  },
+};
+
+type Outline = {
+  projectName: string;
+  documentType: Brief["documentType"];
+  oneLiner: string;
+  chapters: { title: string; pages: number[]; goal: string; isDisciplineEnd?: boolean }[];
+  summary: Brief["summary"];
+};
+
+async function analyzeTwoPass(client: Anthropic, pages: PageInfo[], originalName: string): Promise<Brief> {
+  // Pass 1: index the whole set from text plus a spread of small images.
+  const idxContent: Anthropic.ContentBlockParam[] = [
+    { type: "text", text: `Document file name: ${originalName}\nTotal pages: ${pages.length}. Page indexes are 0-based.\n\nFirst pass: read the whole set and plan the video as chapters. Do not write narration yet.` },
+  ];
+  const imageIdx = pickSpread(pages.length, MAX_IMAGES);
+  for (const p of pages) {
+    idxContent.push({ type: "text", text: `\n=== PAGE ${p.index} ===` });
+    if (imageIdx.has(p.index)) {
+      const data = (await fs.readFile(p.thumbPath)).toString("base64");
+      idxContent.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data } });
+    }
+    const text = p.text.slice(0, 2500);
+    idxContent.push({ type: "text", text: text ? `Text:\n${text}` : "(no text layer)" });
+  }
+  idxContent.push({ type: "text", text: "Write the outline with the write_outline tool. Every content page must appear in exactly one chapter; group related sheets (e.g. all floor plans) into one chapter with up to 6 pages." });
+  const idxRes = await client.messages.create({
+    model: MODEL, max_tokens: 8000, system: SYSTEM, tools: [OUTLINE_TOOL],
+    tool_choice: { type: "tool", name: "write_outline" },
+    messages: [{ role: "user", content: idxContent }],
+  });
+  const outlineUse = idxRes.content.find((c): c is Anthropic.ToolUseBlock => c.type === "tool_use");
+  if (!outlineUse) throw new Error("Model did not return an outline");
+  const outline = outlineUse.input as Outline;
+  const chapterList = outline.chapters.map((c, i) => `${i + 1}. ${c.title} (pages ${c.pages.join(", ")})`).join("\n");
+
+  // Pass 2: write each chapter with full-size images of only its pages.
+  const segments: Brief["segments"] = [];
+  for (let ci = 0; ci < outline.chapters.length; ci++) {
+    const ch = outline.chapters[ci];
+    const chPages = ch.pages.map((n) => pages[n]).filter(Boolean);
+    for (let b = 0; b < Math.max(1, chPages.length); b += DETAIL_BATCH) {
+      const batch = chPages.slice(b, b + DETAIL_BATCH);
+      const content: Anthropic.ContentBlockParam[] = [
+        {
+          type: "text",
+          text: `Project: ${outline.projectName}. ${outline.oneLiner}\n\nThe video runs in these chapters:\n${chapterList}\n\nYou are writing chapter ${ci + 1}: "${ch.title}". Goal: ${ch.goal}${ch.isDisciplineEnd ? "\nThis chapter closes a discipline: put a recap (2-3 takeaways) on its last segment." : ""}\nWrite 1 to 4 segments per page below. Number titles as "${ci + 1}.1", "${ci + 1}.2", ... Page indexes are 0-based and must be one of: ${batch.map((p) => p.index).join(", ")}.`,
+        },
+      ];
+      for (const p of batch) {
+        const data = (await fs.readFile(p.thumbPath)).toString("base64");
+        content.push({ type: "text", text: `\n=== PAGE ${p.index} ===` });
+        content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data } });
+        const text = p.text.length > MAX_TEXT_PER_PAGE ? p.text.slice(0, MAX_TEXT_PER_PAGE) + "\n[truncated]" : p.text;
+        content.push({ type: "text", text: text ? `Text:\n${text}` : "(no text layer)" });
+      }
+      content.push({ type: "text", text: "Write the segments with the write_segments tool." });
+      const res = await client.messages.create({
+        model: MODEL, max_tokens: 12000, system: SYSTEM, tools: [SEGMENTS_TOOL],
+        tool_choice: { type: "tool", name: "write_segments" },
+        messages: [{ role: "user", content }],
+      });
+      const use = res.content.find((c): c is Anthropic.ToolUseBlock => c.type === "tool_use");
+      const got = (use?.input as { segments?: Brief["segments"] } | undefined)?.segments ?? [];
+      segments.push(...got);
+    }
+  }
+  return normalizeBrief(
+    { projectName: outline.projectName, documentType: outline.documentType, oneLiner: outline.oneLiner, segments, summary: outline.summary },
+    pages.length,
+  );
 }
