@@ -6,7 +6,7 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { ingestPdf } from "../src/lib/ingest";
 import { normalizeBrief } from "../src/lib/analyze";
-import { synthesize } from "../src/lib/tts";
+import { synthesize, probeDuration } from "../src/lib/tts";
 import { renderVideo } from "../src/lib/render";
 
 async function main() {
@@ -22,7 +22,8 @@ async function main() {
   const audio = [];
   for (let i = 0; i < brief.segments.length; i++) {
     const file = path.join(work, "audio", `seg-${i}.mp3`);
-    audio.push({ file, duration: await synthesize(brief.segments[i].narration, file) });
+    const cached = await fs.stat(file).then(() => true).catch(() => false);
+    audio.push({ file, duration: cached ? await probeDuration(file) : await synthesize(brief.segments[i].narration, file) });
     process.stdout.write(`narrated ${i + 1}/${brief.segments.length} (${audio[i].duration.toFixed(1)}s)\n`);
   }
   const r = await renderVideo(brief, pages, {

@@ -157,7 +157,7 @@ function timeCallouts(seg: Segment, narr: number, page: PageInfo, aspect: number
     const at = idx >= 0 ? spokenTime(idx, n.length, narr) : MOVE + ((i + 1) / (seg.callouts.length + 1)) * narr;
     // Zoom so the detail is legible: pad the box, never tighter than 22% of the page width,
     // and never wider than the segment's establishing view.
-    const view = viewForBox(c.box, page, aspect, 0.35, 0.22);
+    const view = viewForBox(c.box, page, aspect, 0.45, 0.26);
     return { ...c, at: Math.max(at, MOVE + 0.6), view };
   });
   out.sort((a, b) => a.at - b.at);
@@ -168,7 +168,8 @@ function timeCallouts(seg: Segment, narr: number, page: PageInfo, aspect: number
 }
 
 function timeCaptions(narration: string, narr: number): Caption[] {
-  const sentences = narration.match(/[^.!?]+[.!?]+["')\]]*|[^.!?]+$/g) ?? [narration];
+  // split after sentence punctuation that is followed by whitespace (so 2.02 and 47.66 stay whole)
+  const sentences = narration.split(/(?<=[.!?]["')\]]*)\s+/).filter((x) => x.trim());
   const out: Caption[] = [];
   let idx = 0;
   for (const s of sentences) {
