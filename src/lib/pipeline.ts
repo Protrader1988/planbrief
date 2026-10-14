@@ -2,7 +2,8 @@ import path from "node:path";
 import fs from "node:fs/promises";
 import { getJob, jobDir, updateJob } from "./jobs";
 import { ingestPdf, type PageInfo } from "./ingest";
-import { analyzePages } from "./analyze";
+import { analyzePages, analysisPrompt, ANALYZE_PROVIDER, normalizeBrief, parseJsonLoose } from "./analyze";
+import type { Brief } from "./types";
 import { synthesize } from "./tts";
 import { renderVideo } from "./render";
 
@@ -30,9 +31,47 @@ export async function processJob(jobId: string) {
     await fs.writeFile(path.join(dir, "pages.json"), JSON.stringify(pages.map(stripPage)));
 
     // 2. analyze
+    if (ANALYZE_PROVIDER === "manual") {
+      await updateJob(jobId, {
+        status: "needs_script",
+        progress: 22,
+        message: "Waiting for a script",
+        prompt: analysisPrompt(pages, job.originalName),
+      });
+      return; // resumed by resumeWithScript()
+    }
     await updateJob(jobId, { status: "analyzing", progress: 22, message: "Reading the whole package and writing the script" });
     const brief = await analyzePages(pages, job.originalName);
     await updateJob(jobId, { progress: 45, message: "Script ready", brief });
+    await narrateAndRender(jobId, brief);
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err);
+    console.error(`[job ${jobId}]`, err);
+    await updateJob(jobId, { status: "error", message: "Failed", error: msg });
+  }
+}
+
+/** Manual mode: the person pasted a script; also used to re-render an edited script. */
+export async function resumeWithScript(jobId: string, rawScript: string) {
+  const job = await getJob(jobId);
+  if (!job) throw new Error("job not found");
+  const brief = normalizeBrief(parseJsonLoose(rawScript), job.pageCount || 1);
+  await updateJob(jobId, { brief, error: undefined, prompt: undefined, status: "narrating", progress: 45, message: "Script received" });
+  running.add(jobId);
+  chain = chain
+    .then(() => narrateAndRender(jobId, brief))
+    .catch(async (err) => {
+      const msg = err instanceof Error ? err.message : String(err);
+      await updateJob(jobId, { status: "error", message: "Failed", error: msg });
+    })
+    .finally(() => running.delete(jobId));
+  return brief;
+}
+
+async function narrateAndRender(jobId: string, brief: Brief) {
+  const dir = jobDir(jobId);
+  const pages = await loadPages(jobId);
+  try {
 
     // 3. narrate
     await updateJob(jobId, { status: "narrating", progress: 46, message: "Recording narration" });
@@ -78,6 +117,11 @@ export async function processJob(jobId: string) {
   }
 }
 
-function stripPage(p: PageInfo) {
-  return { index: p.index, width: p.width, height: p.height, textChars: p.text.length };
+function stripPage(p: PageInfo): PageInfo {
+  return { ...p, text: "" };
+}
+
+async function loadPages(jobId: string): Promise<PageInfo[]> {
+  const raw = await fs.readFile(path.join(jobDir(jobId), "pages.json"), "utf8");
+  return JSON.parse(raw) as PageInfo[];
 }

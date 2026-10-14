@@ -85,8 +85,32 @@ function boxSchema(desc: string) {
   };
 }
 
+export type AnalyzeProvider = "api" | "claude-code" | "manual" | "mock";
+
+export const ANALYZE_PROVIDER: AnalyzeProvider =
+  (process.env.ANALYZE_PROVIDER as AnalyzeProvider) ||
+  (process.env.ANALYZE_MOCK === "1" ? "mock" : process.env.ANTHROPIC_API_KEY ? "api" : "claude-code");
+
+/** The task description shared by every provider (and shown to the person in manual mode). */
+export function analysisPrompt(pages: PageInfo[], originalName: string) {
+  return `${SYSTEM}
+
+Document file name: ${originalName}
+Total pages: ${pages.length} (page indexes are 0-based)
+
+Return ONLY a JSON object with this shape, no prose before or after:
+{
+  "projectName": string, "documentType": "RFP"|"RFQ"|"Plans"|"Specs"|"Mixed"|"Other", "oneLiner": string,
+  "segments": [{ "title": string, "page": number, "focus": {"x","y","w","h"}, "narration": string,
+                 "callouts": [{ "label": string, "box": {"x","y","w","h"}, "cue": string }] }],
+  "summary": { "scope": string[], "keyDates": string[], "requirements": string[], "risks": string[], "questionsToAsk": string[] }
+}`;
+}
+
 export async function analyzePages(pages: PageInfo[], originalName: string): Promise<Brief> {
-  if (process.env.ANALYZE_MOCK === "1") return mockBrief(pages, originalName);
+  if (ANALYZE_PROVIDER === "mock") return mockBrief(pages, originalName);
+  if (ANALYZE_PROVIDER === "claude-code") return analyzeWithClaudeCode(pages, originalName);
+  if (ANALYZE_PROVIDER === "manual") throw new Error("manual provider is handled by the pipeline");
   if (!process.env.ANTHROPIC_API_KEY) throw new Error("ANTHROPIC_API_KEY is not set");
   const client = new Anthropic();
 
@@ -205,4 +229,62 @@ function mockBrief(pages: PageInfo[], originalName: string): Brief {
     },
     pages.length,
   );
+}
+
+/**
+ * Runs the analysis through the Claude Code CLI on this machine. Claude Code is
+ * included in Claude Pro/Max subscriptions, so this path has no per-call API
+ * cost. Requires `claude` installed and logged in (`claude login`).
+ */
+async function analyzeWithClaudeCode(pages: PageInfo[], originalName: string): Promise<Brief> {
+  const { spawn } = await import("node:child_process");
+  const path = await import("node:path");
+  const dir = path.dirname(pages[0].imagePath);
+  const textFile = path.join(dir, "pages-text.txt");
+  await fs.writeFile(
+    textFile,
+    pages.map((p) => `=== PAGE ${p.index} ===\n${p.text || "(no text layer)"}`).join("\n\n"),
+  );
+  const outFile = path.join(dir, "brief.json");
+  await fs.rm(outFile, { force: true });
+  const imageIdx = pickSpread(pages.length, MAX_IMAGES);
+  const imageList = pages.filter((p) => imageIdx.has(p.index)).map((p) => `  page ${p.index}: ${p.thumbPath}`).join("\n");
+  const prompt = `${analysisPrompt(pages, originalName)}
+
+Materials on disk:
+- Extracted text of every page: ${textFile}
+- Page images (open each with the Read tool and look at it carefully; the boxes you return must match what you see):
+${imageList}
+
+Read the text file and every listed image, then write the JSON object to ${outFile} with the Write tool. Write nothing else.`;
+
+  const bin = process.env.CLAUDE_CODE_BIN || "claude";
+  await new Promise<void>((resolve, reject) => {
+    const p = spawn(
+      bin,
+      ["-p", prompt, "--allowedTools", "Read,Write", "--permission-mode", "acceptEdits", "--output-format", "text"],
+      { cwd: dir, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, CLAUDECODE: "" } },
+    );
+    let err = "";
+    p.stderr.on("data", (d) => (err += d));
+    p.stdout.on("data", () => {});
+    p.on("error", (e) => reject(new Error(`Could not start Claude Code (${bin}): ${e.message}`)));
+    p.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Claude Code exited ${code}: ${err.slice(-2000)}`))));
+  });
+  const raw = await fs.readFile(outFile, "utf8").catch(() => {
+    throw new Error("Claude Code finished but did not write brief.json");
+  });
+  return normalizeBrief(parseJsonLoose(raw), pages.length);
+}
+
+/** Accepts JSON possibly wrapped in a code fence or prose. */
+export function parseJsonLoose(raw: string): Brief {
+  const trimmed = raw.trim();
+  try {
+    return JSON.parse(trimmed);
+  } catch {
+    const m = /\{[\s\S]*\}/.exec(trimmed);
+    if (!m) throw new Error("No JSON object found in the script");
+    return JSON.parse(m[0]);
+  }
 }

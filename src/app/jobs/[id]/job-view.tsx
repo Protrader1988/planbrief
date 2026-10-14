@@ -4,16 +4,36 @@ import type { Job } from "@/lib/types";
 
 const STEPS: { key: Job["status"][]; label: string }[] = [
   { key: ["queued", "ingesting"], label: "1 · Read pages" },
-  { key: ["analyzing"], label: "2 · Write script" },
+  { key: ["analyzing", "needs_script"], label: "2 · Write script" },
   { key: ["narrating"], label: "3 · Narrate" },
   { key: ["rendering"], label: "4 · Film" },
 ];
-const ORDER: Job["status"][] = ["queued", "ingesting", "analyzing", "narrating", "rendering", "done"];
+const ORDER: Job["status"][] = ["queued", "ingesting", "analyzing", "needs_script", "narrating", "rendering", "done"];
 
 export default function JobView({ id }: { id: string }) {
   const [job, setJob] = useState<Job | null>(null);
   const [active, setActive] = useState(0);
+  const [script, setScript] = useState("");
+  const [scriptErr, setScriptErr] = useState<string | null>(null);
+  const [showEdit, setShowEdit] = useState(false);
+  const [copied, setCopied] = useState(false);
   const video = useRef<HTMLVideoElement>(null);
+
+  async function submitScript() {
+    setScriptErr(null);
+    const res = await fetch(`/api/jobs/${id}/script`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ script }) });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok) { setScriptErr(data.error || "Could not read that script"); return; }
+    setShowEdit(false);
+    setJob((j) => (j ? { ...j, status: "narrating", progress: 45, message: "Script received" } : j));
+    // restart polling
+    const tick = async () => {
+      const r = await fetch(`/api/jobs/${id}`, { cache: "no-store" });
+      if (r.ok) { const j: Job = await r.json(); setJob(j); if (j.status === "done" || j.status === "error") return; }
+      setTimeout(tick, 2000);
+    };
+    setTimeout(tick, 1500);
+  }
 
   useEffect(() => {
     let stop = false;
@@ -91,9 +111,48 @@ export default function JobView({ id }: { id: string }) {
         </div>
       )}
 
+      {job.status === "needs_script" && job.prompt && (
+        <div className="card" style={{ marginTop: 16 }}>
+          <h2 style={{ marginTop: 0 }}>Write the script in Claude</h2>
+          <p className="muted" style={{ fontSize: 14 }}>
+            Pages are ready. Open a Claude chat, attach the same PDF, paste this prompt, then paste Claude's JSON answer below.
+            This uses your Claude subscription instead of API credits.
+          </p>
+          <div className="row">
+            <button className="btn ghost" onClick={async () => { await navigator.clipboard.writeText(job.prompt!); setCopied(true); setTimeout(() => setCopied(false), 2000); }}>
+              {copied ? "Copied" : "Copy prompt"}
+            </button>
+            <a className="btn ghost" href="https://claude.ai/new" target="_blank" rel="noreferrer">Open Claude</a>
+          </div>
+          <textarea value={script} onChange={(e) => setScript(e.target.value)} placeholder='Paste the JSON script here: {"projectName": ...}' rows={8}
+            style={{ width: "100%", marginTop: 14, background: "var(--panel-2)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 10, padding: 12, fontFamily: "ui-monospace, monospace", fontSize: 13 }} />
+          <div className="row" style={{ marginTop: 12, justifyContent: "space-between" }}>
+            {scriptErr ? <span className="err" style={{ fontSize: 13 }}>{scriptErr}</span> : <span />}
+            <button className="btn" disabled={!script.trim()} onClick={submitScript}>Narrate and film</button>
+          </div>
+        </div>
+      )}
+
       {job.brief && (
         <>
-          <h2>Walkthrough</h2>
+          <div className="row" style={{ justifyContent: "space-between", marginTop: 32 }}>
+            <h2 style={{ margin: 0 }}>Walkthrough</h2>
+            {(job.status === "done" || job.status === "error") && (
+              <button className="btn ghost" onClick={() => { setScript(JSON.stringify(job.brief, null, 2)); setShowEdit((v) => !v); }}>
+                {showEdit ? "Close editor" : "Edit script and re-film"}
+              </button>
+            )}
+          </div>
+          {showEdit && (
+            <div className="card" style={{ marginBottom: 14 }}>
+              <textarea value={script} onChange={(e) => setScript(e.target.value)} rows={16}
+                style={{ width: "100%", background: "var(--panel-2)", color: "var(--text)", border: "1px solid var(--line)", borderRadius: 10, padding: 12, fontFamily: "ui-monospace, monospace", fontSize: 13 }} />
+              <div className="row" style={{ marginTop: 12, justifyContent: "space-between" }}>
+                {scriptErr ? <span className="err" style={{ fontSize: 13 }}>{scriptErr}</span> : <span className="muted" style={{ fontSize: 13 }}>Fix a sentence, a page number or a highlight box, then re-film.</span>}
+                <button className="btn" onClick={submitScript}>Re-film</button>
+              </div>
+            </div>
+          )}
           {job.brief.segments.map((s, i) => (
             <div key={s.id} className={`seg ${i === active && job.status === "done" ? "on" : ""}`} onClick={() => seek(i)}>
               <img src={`/api/jobs/${id}/page/${s.page}`} alt={`Page ${s.page + 1}`} loading="lazy" />

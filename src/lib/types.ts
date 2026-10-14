@@ -47,6 +47,7 @@ export type JobStatus =
   | "queued"
   | "ingesting"
   | "analyzing"
+  | "needs_script"
   | "narrating"
   | "rendering"
   | "done"
@@ -62,6 +63,8 @@ export type Job = {
   message: string;
   pageCount?: number;
   brief?: Brief;
+  /** manual mode: the prompt the person pastes into Claude */
+  prompt?: string;
   videoUrl?: string;
   durationSec?: number;
   /** start time (seconds) of each segment in the video */
