@@ -5,10 +5,11 @@ import type { Job } from "@/lib/types";
 const STEPS: { key: Job["status"][]; label: string }[] = [
   { key: ["queued", "ingesting"], label: "1 · Read pages" },
   { key: ["analyzing", "needs_script"], label: "2 · Write script" },
-  { key: ["narrating"], label: "3 · Narrate" },
-  { key: ["rendering"], label: "4 · Film" },
+  { key: ["verifying"], label: "3 · Verify ×3" },
+  { key: ["narrating"], label: "4 · Narrate" },
+  { key: ["rendering"], label: "5 · Film" },
 ];
-const ORDER: Job["status"][] = ["queued", "ingesting", "analyzing", "needs_script", "narrating", "rendering", "done"];
+const ORDER: Job["status"][] = ["queued", "ingesting", "analyzing", "needs_script", "verifying", "narrating", "rendering", "done"];
 
 export default function JobView({ id }: { id: string }) {
   const [job, setJob] = useState<Job | null>(null);
@@ -133,6 +134,8 @@ export default function JobView({ id }: { id: string }) {
         </div>
       )}
 
+      {job.verification && <Verification v={job.verification} />}
+
       {job.brief && (
         <>
           <div className="row" style={{ justifyContent: "space-between", marginTop: 32 }}>
@@ -183,6 +186,72 @@ export default function JobView({ id }: { id: string }) {
         </>
       )}
     </>
+  );
+}
+
+function Verification({ v }: { v: NonNullable<Job["verification"]> }) {
+  const [open, setOpen] = useState(false);
+  const m = v.mechanicalAfterFix ?? v.mechanical;
+  const issues = [...v.reviewer.issues, ...v.auditor.issues];
+  const verdictClass = v.summary.verdict === "pass" ? "done" : v.summary.verdict === "pass-with-notes" ? "live" : "error";
+  const verdictText = v.summary.verdict === "pass" ? "Passed" : v.summary.verdict === "pass-with-notes" ? "Passed with notes" : "Needs review";
+  const unverified = m.segments.flatMap((s) => s.claims.filter((c) => c.status !== "verified").map((c) => ({ ...c, seg: s.title, page: s.page })));
+  return (
+    <div className="card" style={{ marginTop: 16 }}>
+      <div className="row" style={{ justifyContent: "space-between" }}>
+        <div>
+          <strong>Triple verification</strong>
+          <div className="muted" style={{ fontSize: 13 }}>Three independent checks on the script before it was narrated.</div>
+        </div>
+        <span className={`pill ${verdictClass}`}>{verdictText}</span>
+      </div>
+      <div className="steps" style={{ gridTemplateColumns: "repeat(3, 1fr)" }}>
+        <div className="step ok">
+          ✓ 1 · Figures vs. sheets
+          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{m.totals.verified} of {m.totals.claims} figures found on the cited sheet{m.totals.elsewhere ? `, ${m.totals.elsewhere} on another sheet` : ""}{m.totals.unverified ? `, ${m.totals.unverified} not found` : ""}</div>
+        </div>
+        <div className={`step ${v.reviewer.ran ? "ok" : ""}`}>
+          {v.reviewer.ran ? "✓" : "–"} 2 · Architect/engineer review
+          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{v.reviewer.ran ? `${v.reviewer.issues.length} finding${v.reviewer.issues.length === 1 ? "" : "s"}${v.reviewer.coverage.length ? `, ${v.reviewer.coverage.length} coverage note${v.reviewer.coverage.length === 1 ? "" : "s"}` : ""}` : v.reviewer.error ? "failed: " + v.reviewer.error.slice(0, 80) : "skipped (no model in manual mode)"}</div>
+        </div>
+        <div className={`step ${v.auditor.ran ? "ok" : ""}`}>
+          {v.auditor.ran ? "✓" : "–"} 3 · Consistency and plain-English
+          <div className="muted" style={{ fontSize: 12, marginTop: 4 }}>{v.auditor.ran ? `${v.auditor.issues.length} finding${v.auditor.issues.length === 1 ? "" : "s"}` : v.auditor.error ? "failed: " + v.auditor.error.slice(0, 80) : "skipped (no model in manual mode)"}</div>
+        </div>
+      </div>
+      {v.fixes.applied > 0 && <p className="muted" style={{ fontSize: 13, margin: "12px 0 0" }}>{v.fixes.applied} segment{v.fixes.applied === 1 ? "" : "s"} corrected and re-checked before narration.</p>}
+      {(issues.length > 0 || unverified.length > 0 || v.reviewer.coverage.length > 0) && (
+        <>
+          <button className="btn ghost" style={{ marginTop: 12 }} onClick={() => setOpen((o) => !o)}>{open ? "Hide details" : "Show details"}</button>
+          {open && (
+            <div style={{ marginTop: 12, fontSize: 14 }}>
+              {issues.map((i, k) => (
+                <div key={k} style={{ padding: "10px 0", borderTop: "1px solid var(--line)" }}>
+                  <span className={`pill ${i.severity === "critical" ? "error" : i.severity === "major" ? "live" : ""}`}>{i.severity}</span>{" "}
+                  <span className="pill">{i.check === "reviewer" ? "review" : "audit"}</span>{" "}
+                  {i.fixed && <span className="pill done">fixed</span>}
+                  <div style={{ marginTop: 6 }}><strong>{i.segmentId}</strong> · “{i.claim}” — {i.problem}</div>
+                  {i.correction && <div className="muted">Correction: {i.correction}</div>}
+                  {i.evidence && <div className="muted" style={{ fontSize: 13 }}>Evidence: {i.evidence}</div>}
+                </div>
+              ))}
+              {unverified.map((c, k) => (
+                <div key={"u" + k} style={{ padding: "10px 0", borderTop: "1px solid var(--line)" }}>
+                  <span className={`pill ${c.status === "unverified" ? "live" : ""}`}>{c.status === "unverified" ? "not on sheets" : `on sheet ${(c.foundOnPage ?? 0) + 1}`}</span>
+                  <div style={{ marginTop: 6 }}>“{c.text}” in <strong>{c.seg}</strong> (sheet {c.page + 1})</div>
+                </div>
+              ))}
+              {v.reviewer.coverage.map((c, k) => (
+                <div key={"c" + k} style={{ padding: "10px 0", borderTop: "1px solid var(--line)" }}>
+                  <span className="pill">not covered</span>
+                  <div style={{ marginTop: 6 }}>{c}</div>
+                </div>
+              ))}
+            </div>
+          )}
+        </>
+      )}
+    </div>
   );
 }
 

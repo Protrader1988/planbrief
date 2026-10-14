@@ -52,6 +52,7 @@ export type JobStatus =
   | "ingesting"
   | "analyzing"
   | "needs_script"
+  | "verifying"
   | "narrating"
   | "rendering"
   | "done"
@@ -69,6 +70,8 @@ export type Job = {
   brief?: Brief;
   /** manual mode: the prompt the person pastes into Claude */
   prompt?: string;
+  /** triple-verification report (see review.ts) */
+  verification?: import("./review").VerificationReport;
   videoUrl?: string;
   durationSec?: number;
   /** start time (seconds) of each segment in the video */

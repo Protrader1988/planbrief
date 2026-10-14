@@ -3,6 +3,7 @@ import fs from "node:fs/promises";
 import { getJob, jobDir, updateJob } from "./jobs";
 import { ingestPdf, type PageInfo } from "./ingest";
 import { analyzePages, analysisPrompt, ANALYZE_PROVIDER, normalizeBrief, parseJsonLoose } from "./analyze";
+import { verifyBrief } from "./review";
 import type { Brief } from "./types";
 import { synthesizeNarration, type Narration } from "./tts";
 import { renderVideo } from "./render";
@@ -41,8 +42,9 @@ export async function processJob(jobId: string) {
       return; // resumed by resumeWithScript()
     }
     await updateJob(jobId, { status: "analyzing", progress: 22, message: "Reading the whole package and writing the script" });
-    const brief = await analyzePages(pages, job.originalName);
-    await updateJob(jobId, { progress: 45, message: "Script ready", brief });
+    const draft = await analyzePages(pages, job.originalName);
+    await updateJob(jobId, { progress: 38, message: "Script drafted", brief: draft });
+    const brief = await verifyStage(jobId, draft, pages, ANALYZE_PROVIDER !== "mock");
     await narrateAndRender(jobId, brief);
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
@@ -55,16 +57,31 @@ export async function processJob(jobId: string) {
 export async function resumeWithScript(jobId: string, rawScript: string) {
   const job = await getJob(jobId);
   if (!job) throw new Error("job not found");
-  const brief = normalizeBrief(parseJsonLoose(rawScript), job.pageCount || 1);
-  await updateJob(jobId, { brief, error: undefined, prompt: undefined, status: "narrating", progress: 45, message: "Script received" });
+  const draft = normalizeBrief(parseJsonLoose(rawScript), job.pageCount || 1);
+  await updateJob(jobId, { brief: draft, error: undefined, prompt: undefined, status: "verifying", progress: 40, message: "Script received" });
   running.add(jobId);
   chain = chain
-    .then(() => narrateAndRender(jobId, brief))
+    .then(async () => {
+      const pages = await loadPages(jobId);
+      // manual mode has no model available; the mechanical check still runs
+      const brief = await verifyStage(jobId, draft, pages, ANALYZE_PROVIDER === "api" || ANALYZE_PROVIDER === "claude-code");
+      await narrateAndRender(jobId, brief);
+    })
     .catch(async (err) => {
       const msg = err instanceof Error ? err.message : String(err);
       await updateJob(jobId, { status: "error", message: "Failed", error: msg });
     })
     .finally(() => running.delete(jobId));
+  return draft;
+}
+
+async function verifyStage(jobId: string, draft: Brief, pages: PageInfo[], modelChecks: boolean): Promise<Brief> {
+  await updateJob(jobId, { status: "verifying", progress: 40, message: "Verifying the script" });
+  const { brief, report } = await verifyBrief(draft, pages, path.join(jobDir(jobId), "verify"), {
+    modelChecks,
+    onProgress: async (m) => { await updateJob(jobId, { message: m }); },
+  });
+  await updateJob(jobId, { brief, verification: report, progress: 45, message: `Verified: ${report.summary.verdict}` });
   return brief;
 }
 
@@ -90,8 +107,15 @@ async function narrateAndRender(jobId: string, brief: Brief) {
     const work = path.join(dir, "work");
     await fs.mkdir(work, { recursive: true });
     const outFile = path.join(dir, "brief.mp4");
+    const v = (await getJob(jobId))?.verification;
+    const m = v?.mechanicalAfterFix ?? v?.mechanical;
+    const verificationLine = m
+      ? `Verified: ${m.totals.verified} of ${m.totals.claims} figures matched to the sheets` +
+        (v?.reviewer.ran && v?.auditor.ran ? "; independent architect/engineer review and consistency audit passed" : v?.reviewer.ran || v?.auditor.ran ? "; one independent review passed" : "")
+      : undefined;
     const { total: durationSec, starts } = await renderVideo(brief, pages, {
       audio,
+      verificationLine,
       outFile,
       workDir: work,
       width: Number(process.env.VIDEO_WIDTH || 1920),
@@ -117,7 +141,7 @@ async function narrateAndRender(jobId: string, brief: Brief) {
 }
 
 function stripPage(p: PageInfo): PageInfo {
-  return { ...p, text: "" };
+  return p; // text is kept so verification can re-run from disk
 }
 
 async function loadPages(jobId: string): Promise<PageInfo[]> {

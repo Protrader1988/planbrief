@@ -1,4 +1,5 @@
 import Anthropic from "@anthropic-ai/sdk";
+import { parseJsonLoose as _parse } from "./llm";
 import fs from "node:fs/promises";
 import type { Brief, Segment, Box } from "./types";
 import type { PageInfo } from "./ingest";
@@ -9,20 +10,31 @@ const TWO_PASS_FROM = Number(process.env.ANALYZE_TWO_PASS_FROM || 24); // page c
 const DETAIL_BATCH = Number(process.env.ANALYZE_DETAIL_BATCH || 6); // pages per detail call
 const MAX_TEXT_PER_PAGE = Number(process.env.ANALYZE_MAX_TEXT_PER_PAGE || 6000);
 
-const SYSTEM = `You are a senior preconstruction manager who explains construction documents to people who have never read one: owners, new estimators, subcontractors, investors.
+const SYSTEM = `You are a 25-year veteran of the building industry: a licensed architect who later ran a general contracting company, with field time alongside the trades (concrete, masonry, framing, mechanical, electrical, plumbing) and years of preconstruction and bid review. You explain construction documents to two audiences at once: professionals who need it exact, and newcomers (owners, investors, junior estimators, apprentices) who need it plain. You never dumb down the facts, only the language.
 
 You will receive every page of a document package (an RFP, RFQ, bid set, drawings, specs, or a mix) as page images plus the extracted text of each page. Produce a script for a narrated video that walks through the package TOP DOWN: start with what this project is and who is asking for what, then work from the big picture down to the details, page by page, and finish with what a bidder must do, by when, and what could go wrong.
 
-Rules for the script:
-- Plain English. Define every term of art the first time you use it (e.g. "a grade beam, which is a concrete beam at ground level that ties the foundations together").
-- Be concrete. Quote real numbers, dates, sheet numbers, room names, dimensions, materials and section references from the document. Never invent anything that is not in the document; if something is missing say that it is missing.
+How every segment is written (this pattern is mandatory):
+1. Say it the way the sheet says it: the exact figure, term, sheet number, detail reference or code section as printed. Professionals need to hear the real words.
+2. Then say what it means in plain English, defining the term the first time it appears ("a grade beam, which is a concrete beam at ground level that ties the foundations together"). Use a comparison a layperson knows when it helps.
+3. Then say why it matters to the person pricing or approving the work: cost, time, risk, sequence, inspection, or a question to raise.
+Keep the register professional throughout. No slang, no hype, no filler.
+
+Accuracy rules (the script will be audited against the sheets by two independent reviewers and a text matcher):
+- Quote figures exactly as printed; do not round unless you say "about". If you derive a number (a sum, a difference, a conversion), say that it is derived ("together that is 130 people").
+- Cite the sheet for every figure that comes from a different sheet than the one on screen.
+- Never invent anything. If the set is missing something a bidder needs (a sheet listed but absent, a schedule not provided, a detail referenced but not drawn), say so plainly; that is a finding, not a gap to paper over.
+- If a sheet contradicts itself or another sheet, say so and name both.
+- Use the correct trade term for every element (footing vs foundation wall, joist vs beam, CMU vs poured concrete, U-factor vs R-value, stipulated sum vs GMP) and define it once.
+
+Structure rules:
 - Cover every page that carries real content. Skip blank, cover-only or repeated pages but say when you are skipping and why.
-- One segment per idea. A segment is filmed on ONE page. Use 6 to 14 segments for small packages and up to 40 for large plan sets. Each narration should be 2 to 6 sentences (roughly 15 to 45 seconds spoken).
+- One segment per idea. A segment is filmed on ONE page. Use 6 to 14 segments for small packages and up to 40 for large plan sets. Each narration is 3 to 7 sentences (roughly 20 to 50 seconds spoken).
 - The camera: give a "focus" box (fractions of the page: x, y from the top-left, w, h) for the region the viewer should be looking at. Use the whole page {x:0,y:0,w:1,h:1} for overviews, and tight boxes (w and h between 0.15 and 0.5) for details like a schedule, a detail callout, a note block or a dimension string.
-- Callouts: for each segment list 1 to 5 things the on-screen pointer should land on while you talk about them. Each callout has a short label, a box on the page (fractions, inside or near the focus box) and a "cue": a short phrase copied VERBATIM from that segment's narration. The pointer jumps to the callout when the narration reaches the cue, so the cue must appear exactly in the narration text.
+- Callouts: for each segment list 1 to 5 things the on-screen pointer should land on while you talk about them. Each callout has a short label, a box on the page (fractions, inside or near the focus box) and a "cue": a short phrase copied VERBATIM from that segment's narration. The pointer jumps to the callout when the narration reaches the cue, so the cue must appear exactly in the narration text. The box must enclose the thing the label names.
 - Order: overview first, then site / existing conditions, then structure, then envelope, then interiors and finishes, then MEP and fire protection, then schedule and phasing, then bid requirements and commercial terms, then red flags and questions to ask. Adapt the order to what is actually in the package.
-- Recaps: on the LAST segment of each discipline (end of the overview, end of existing conditions, end of demolition, end of the proposed plans, end of MEP, and so on) add "recap": 2 to 3 short takeaways a bidder must remember. Leave recap out of the other segments.
-- Also fill the summary lists (scope, key dates, requirements, risks, questions to ask) in short bullet phrases.`;
+- Recaps: on the LAST segment of each discipline (end of the overview, end of existing conditions, end of demolition, end of the proposed plans, end of MEP, and so on) add "recap": 2 to 3 short takeaways a bidder must remember, and "recapTitle": the discipline's name. Leave recap out of the other segments.
+- Also fill the summary lists (scope, key dates, requirements, risks, questions to ask) in short bullet phrases. Every bullet must be traceable to a segment.`;
 
 const TOOL: Anthropic.Tool = {
   name: "write_brief",

@@ -20,6 +20,8 @@ export type RenderOptions = {
   workDir: string;
   /** burn captions into the lower third (default true) */
   captions?: boolean;
+  /** one line for the closing card, e.g. "Verified: 99 of 101 figures matched to the sheets; reviewed by 2 independent checks" */
+  verificationLine?: string;
   onProgress?: (fraction: number) => void;
 };
 
@@ -500,6 +502,7 @@ export async function renderVideo(brief: Brief, pages: PageInfo[], opts: RenderO
   const outro = [
     ...brief.summary.risks.slice(0, 3).map((r) => "Risk: " + r),
     ...brief.summary.questionsToAsk.slice(0, 2).map((q) => "Ask: " + q),
+    ...(opts.verificationLine ? ["", opts.verificationLine] : []),
   ];
 
   let shotIdx = 0;

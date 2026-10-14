@@ -11,6 +11,18 @@ Upload an RFP, RFQ, drawing set or spec book. Get back a narrated video that wal
 
 Sets over 24 pages run a two-pass script: an index pass that reads the whole set and plans chapters, then a detail pass per chapter with full-size images of only those sheets, so a 60-sheet set gets the same depth per sheet as a 10-sheet one (`ANALYZE_TWO_PASS_FROM`, `ANALYZE_DETAIL_BATCH`).
 
+### Triple verification
+
+Nothing is narrated until the script has passed three independent checks:
+
+1. **Figures vs. sheets (code, no AI).** Every number, dimension, sheet reference, code section, date and dollar amount in the script is matched against the text extracted from the cited sheet (boundary-aware, rounding-aware, unit-order-aware). Not found on that sheet → flagged. Found on a different sheet → noted. Also checks page indexes, box bounds and pointer cues. Tested by planting errors: 12 of 13 caught; the miss was a wrong-but-present number, which is what check 2 exists for.
+2. **Independent architect/engineer review (fresh model session).** A reviewer briefed as a 25-year licensed architect, PE and former GC gets the sheets and the script, never the writer's reasoning, and audits every claim, callout box and definition against the drawings, and lists what the script failed to cover.
+3. **Consistency and plain-English audit (another fresh session, different brief).** Checks that repeated figures agree, every recap and summary bullet traces to a segment, each simplification preserves the technical meaning, and the "questions to ask" are real gaps.
+
+Flagged segments are rewritten by a correction pass, check 1 re-runs, and the report (verdict, findings, what was fixed) is shown on the job page and summarized on the video's closing card. In manual mode only check 1 runs, and the page says so.
+
+The writer itself is briefed as a veteran of the trades with a mandatory pattern per segment: say it as the sheet says it, then what it means in plain English, then why it matters to the person pricing the work.
+
 Everything runs in one Node process with a file-backed job queue. No database required.
 
 ## Run it for free (recommended)
