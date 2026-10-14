@@ -23,7 +23,7 @@ export async function ingestPdf(
   outDir: string,
   opts: { renderDpi?: number; modelMaxPx?: number; onProgress?: (done: number, total: number) => void } = {},
 ): Promise<PageInfo[]> {
-  const renderDpi = opts.renderDpi ?? 110;
+  const renderDpi = opts.renderDpi ?? Number(process.env.RENDER_DPI || 150);
   const modelMaxPx = opts.modelMaxPx ?? 1400;
 
   const { stdout: info } = await run("pdfinfo", [pdfPath]);

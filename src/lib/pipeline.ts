@@ -95,8 +95,8 @@ async function narrateAndRender(jobId: string, brief: Brief) {
       audio,
       outFile,
       workDir: work,
-      width: Number(process.env.VIDEO_WIDTH || 1280),
-      height: Number(process.env.VIDEO_HEIGHT || 720),
+      width: Number(process.env.VIDEO_WIDTH || 1920),
+      height: Number(process.env.VIDEO_HEIGHT || 1080),
       fps: Number(process.env.VIDEO_FPS || 24),
       onProgress: (f) => updateJob(jobId, { progress: 60 + Math.round(f * 39), message: `Filming… ${Math.round(f * 100)}%` }),
     });

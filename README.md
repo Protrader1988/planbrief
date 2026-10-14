@@ -54,7 +54,7 @@ The `Dockerfile` installs ffmpeg and poppler and builds a standalone Next.js ser
 
 - Mount a persistent volume at `/data` (uploads, page images and videos live there).
 - Set `ANALYZE_PROVIDER=api` with `ANTHROPIC_API_KEY` (Claude Code isn't available inside the container), and `TTS_PROVIDER=openai` with `OPENAI_API_KEY` or `piper` with a voice on the volume.
-- Give it at least 2 GB RAM. Rendering is CPU-bound and runs about real time at 720p (a 10-minute video takes roughly 10 minutes).
+- Give it at least 2 GB RAM. Rendering is CPU-bound and runs at roughly a third of real time at 1080p (a 10-minute video takes about 30 minutes on a laptop).
 
 Railway: New Project → Deploy from GitHub repo → add a Volume mounted at `/data` → add the variables. Render: New Web Service → Docker → add a Disk at `/data`.
 
@@ -71,7 +71,9 @@ Railway: New Project → Deploy from GitHub repo → add a Volume mounted at `/d
 | `OPENAI_API_KEY` | – | for `TTS_PROVIDER=openai` |
 | `OPENAI_TTS_MODEL` / `OPENAI_TTS_VOICE` | `gpt-4o-mini-tts` / `onyx` | voice |
 | `DATA_DIR` | `./data` | storage root |
-| `VIDEO_WIDTH` / `VIDEO_HEIGHT` / `VIDEO_FPS` | 1280 / 720 / 24 | output format |
+| `VIDEO_WIDTH` / `VIDEO_HEIGHT` / `VIDEO_FPS` | 1920 / 1080 / 24 | output format |
+| `VIDEO_CRF` / `VIDEO_PRESET` | 18 / medium | x264 quality and speed |
+| `RENDER_DPI` | 150 | page rasterization; raise for very dense sheets |
 | `ANALYZE_MAX_IMAGES` | 40 | how many page images go to the model (text goes for all pages) |
 | `MAX_UPLOAD_MB` | 200 | upload cap |
 
