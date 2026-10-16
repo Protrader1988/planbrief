@@ -146,18 +146,7 @@ export async function extractTakeoff(pages: PageInfo[], brief: Brief, workDir: s
   }
 
   // check 1: mechanical, against the sheet text
-  const mech = { verified: 0, derived: 0, unverified: 0 };
-  for (const it of items) {
-    const text = norm(pages[it.sheet].text);
-    if (it.method === "derived") { it.status = "derived"; mech.derived++; continue; }
-    const src = norm(it.sourceText);
-    const srcOk = src.length >= 3 && (text.includes(src) || src.split(/\s+/).filter((w) => w.length > 1).every((w) => text.includes(w)));
-    const qty = it.quantity;
-    const qtyOk = qty == null || has(text, String(qty), { rounding: true }) || has(text, qty.toFixed(2), { rounding: true }) || hasFeetInches(text, qty);
-    if (srcOk && qtyOk) { it.status = "verified"; mech.verified++; }
-    else if (it.method === "counted" && srcOk) { it.status = "verified"; mech.verified++; }
-    else { it.status = "unverified"; it.flag = !srcOk ? "Source text not found on the sheet text layer (may be image-only); check the sheet." : "Quantity not found on the sheet; check the sheet."; mech.unverified++; }
-  }
+  const mech = mechanicalTakeoffCheck(items, pages);
 
   // check 2: independent estimator
   const estimator: Takeoff["checks"]["estimator"] = { ran: false, findings: 0 };
@@ -186,10 +175,65 @@ export async function extractTakeoff(pages: PageInfo[], brief: Brief, workDir: s
   return { items, notCountable: dedupeNC(notCountable), checks: { mechanical: mech, estimator } };
 }
 
+/** Matches each line's quoted source text and quantity against the sheet's text layer. */
+export function mechanicalTakeoffCheck(items: TakeoffItem[], pages: PageInfo[]) {
+  const mech = { verified: 0, derived: 0, unverified: 0 };
+  for (const it of items) {
+    const text = norm(pages[it.sheet].text);
+    if (it.method === "derived") { it.status = "derived"; mech.derived++; continue; }
+    // quoted text may carry "..." gaps; every quoted piece must appear (most of its words, in order-free form)
+    const pieces = norm(it.sourceText).split(/\s*(?:\.\.\.|…)\s*/).map((x) => x.trim()).filter((x) => x.length >= 2);
+    const pieceOk = (pc: string) => {
+      if (text.includes(pc)) return true;
+      const words = pc.split(/\s+/).filter((w) => w.length > 1);
+      const found = words.filter((w) => text.includes(w)).length;
+      return words.length > 0 && found / words.length >= 0.8;
+    };
+    const srcOk = pieces.length > 0 && pieces.every(pieceOk);
+    const qty = it.quantity;
+    const qtyOk = qty == null || has(text, String(qty), { rounding: true }) || has(text, qty.toFixed(2), { rounding: true }) || hasFeetInches(text, qty) || hasFraction(text, qty);
+    if (srcOk && qtyOk) { it.status = "verified"; mech.verified++; }
+    else if (it.method === "counted" && srcOk) { it.status = "verified"; mech.verified++; }
+    else { it.status = "unverified"; it.flag = !srcOk ? "Quoted text not found on the sheet's text layer (may be image-only); check the sheet." : "Quantity not found on the sheet as printed; check the sheet."; mech.unverified++; }
+  }
+  return mech;
+}
+
+/** 3.625 matches "3 5/8", 0.75 matches "3/4", 2.5 matches "2 1/2" or "2-1/2". */
+function hasFraction(text: string, qty: number): boolean {
+  const whole = Math.floor(qty);
+  const frac = qty - whole;
+  if (frac < 0.01) return false;
+  for (const den of [2, 3, 4, 8, 16]) {
+    const num = Math.round(frac * den);
+    if (num > 0 && num < den && Math.abs(frac - num / den) < 0.002) {
+      const f = `${num}/${den}`;
+      const forms = whole > 0 ? [`${whole} ${f}`, `${whole}-${f}`, `${whole}${f}`] : [f];
+      if (forms.some((v) => text.includes(v))) return true;
+    }
+  }
+  return false;
+}
+
+/** 48.31 matches 48'-3 3/4" (also as the extractor garbles it, 48'-343"), 104.375 matches 104'-4 1/2", 60 matches 60'-0". */
 function hasFeetInches(text: string, qty: number): boolean {
-  const ft = Math.floor(qty), inch = Math.round((qty - ft) * 12);
-  if (Math.abs(qty - (ft + inch / 12)) > 0.01) return false;
-  return has(text, `${ft}'${inch}`, { fraction: true }) || (inch === 0 && has(text, `${ft}'0`, { fraction: true }));
+  const ft = Math.floor(qty);
+  const inchesF = (qty - ft) * 12;
+  let inch = Math.floor(inchesF + 1e-6);
+  let rem = inchesF - inch;
+  if (rem > 0.9) { inch += 1; rem = 0; }
+  if (rem < 0.03) {
+    if (Math.abs(qty - (ft + inch / 12)) > 0.01) return false;
+    return has(text, `${ft}'${inch}`, { fraction: true }) || (inch === 0 && has(text, `${ft}'0`, { fraction: true }));
+  }
+  for (const den of [2, 4, 8, 16]) {
+    const num = Math.round(rem * den);
+    if (num > 0 && num < den && Math.abs(rem - num / den) < 0.03) {
+      const forms = [`${ft}'${inch} ${num}/${den}`, `${ft}'${inch}-${num}/${den}`, `${ft}'${inch}${num}${den}`, `${ft}'${inch}${num}/${den}`];
+      if (forms.some((v) => text.includes(v))) return true;
+    }
+  }
+  return false;
 }
 
 function dedupeNC(xs: NotCountable[]): NotCountable[] {
