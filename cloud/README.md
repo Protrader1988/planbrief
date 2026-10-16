@@ -19,4 +19,4 @@ Phone-first, always on, no server bill:
    (from `claude setup-token` on any machine where Claude Code is logged in) or `ANTHROPIC_API_KEY`.
 4. Repo Settings → Pages → Source: GitHub Actions. Push, and the site is at `https://<owner>.github.io/planbrief/`.
 
-Add the site to your phone's home screen. Upload a PDF, close the page, come back to the link when it's done.
+Add the site to your phone's home screen: https://protrader1988.github.io/planbrief/ . Upload a PDF, close the page, come back to the link when it is done.
