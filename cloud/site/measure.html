@@ -277,12 +277,14 @@ async function commit() {
   const kind = tool;
   const value = kind === "length" ? polyLength(pts) / pxPerFt : kind === "area" ? polyArea(pts) / pxPerFt / pxPerFt : pts.length;
   const unit = kind === "length" ? "LF" : kind === "area" ? "SF" : "EA";
-  const name = prompt(`Name this ${kind} (e.g. "Lounge floor", "Demising wall", "Doors D-2"):`, "") ?? "";
+  const n = meas.filter((m) => m.sheet === sheet && m.kind === kind).length + 1;
+  const name = `${kind === "length" ? "Run" : kind === "area" ? "Area" : "Count"} ${n}, sheet ${sheet + 1}`;
   const row = { job_id: jobId, sheet, kind, name, points: pts.map(([x, y]) => [Math.round(x), Math.round(y)]), value: +value.toFixed(2), unit, assembly: kind === "count" ? "count-each" : null, height_ft: kind === "length" ? 10 : null };
   pts = [];
   const { data, error } = await sb.from("measurements").insert(row).select("*").single();
-  if (error) { alert(error.message); return; }
+  if (error) { hint.textContent = "Could not save: " + error.message; return; }
   meas.push(data); renderList(); draw();
+  hint.textContent = `Saved ${fmtVal(data)}. Rename it or pick an assembly in the list below.`;
 }
 async function update(id, patch) {
   const m = meas.find((x) => x.id === id); Object.assign(m, patch, { updated_at: new Date().toISOString() });
