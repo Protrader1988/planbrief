@@ -68,7 +68,7 @@ let FONT_BOLD = "sans-serif";
 type View = { cx: number; cy: number; w: number; h: number }; // page-pixel space
 
 /** Fits a page box into the frame aspect with padding, clamped to the page. */
-function viewForBox(box: Box, page: { width: number; height: number }, aspect: number, pad: number, minWidthFrac: number): View {
+export function viewForBox(box: Box, page: { width: number; height: number }, aspect: number, pad: number, minWidthFrac: number): View {
   let w = box.w * page.width * (1 + pad * 2);
   let h = box.h * page.height * (1 + pad * 2);
   if (w / h < aspect) w = h * aspect;

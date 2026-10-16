@@ -17,6 +17,7 @@ import { analyzePages } from "../src/lib/analyze";
 import { verifyBrief } from "../src/lib/review";
 import { synthesizeNarration, type Narration } from "../src/lib/tts";
 import { renderVideo } from "../src/lib/render";
+import { renderGuide } from "../src/lib/guide";
 
 const run = promisify(execFile);
 const SUPABASE_URL = process.env.SUPABASE_URL!;
@@ -51,27 +52,29 @@ async function upload(bucket: string, objectPath: string, file: string, contentT
 }
 
 /**
- * Where the finished video lives. Supabase's free tier caps a file at 50 MB, which a real
- * drawing set exceeds, so inside GitHub Actions the video goes to a GitHub Release on this
- * repo (2 GB per file, no storage quota on a public repo). Outside Actions, or if the
- * release fails, small files fall back to Supabase storage.
+ * Where finished files live. Supabase's free tier caps a file at 50 MB, which a real
+ * drawing set's video exceeds, so inside GitHub Actions outputs go to a GitHub Release on
+ * this repo (2 GB per file, no storage quota on a public repo). Outside Actions, or if the
+ * release fails, files under the cap fall back to Supabase storage.
  */
-async function publishVideo(id: string, file: string, title: string) {
+async function publishFile(id: string, file: string, assetName: string, title: string, contentType: string) {
   const repo = process.env.GITHUB_REPOSITORY;
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (repo && token) {
     try {
       const tag = `job-${id}`;
       const env = { ...process.env, GH_TOKEN: token };
-      await run("gh", ["release", "create", tag, `${file}#video.mp4`, "--repo", repo, "--title", `PlanBrief: ${title}`.slice(0, 120), "--notes", `Walkthrough video for job ${id}.`], { env });
-      return `https://github.com/${repo}/releases/download/${tag}/video.mp4`;
+      const exists = await run("gh", ["release", "view", tag, "--repo", repo], { env }).then(() => true, () => false);
+      if (!exists) await run("gh", ["release", "create", tag, "--repo", repo, "--title", `PlanBrief: ${title}`.slice(0, 120), "--notes", `Outputs for job ${id}.`], { env });
+      await run("gh", ["release", "upload", tag, `${file}#${assetName}`, "--repo", repo, "--clobber"], { env });
+      return `https://github.com/${repo}/releases/download/${tag}/${assetName}`;
     } catch (e) {
       console.warn("GitHub release upload failed, falling back to Supabase:", e instanceof Error ? e.message : e);
     }
   }
   const size = (await fs.stat(file)).size;
-  if (size > 49 * 1024 * 1024) throw new Error(`Video is ${(size / 1048576).toFixed(0)} MB, over the 50 MB Supabase limit, and no GitHub release target is configured`);
-  return upload("videos", `${id}/video.mp4`, file, "video/mp4");
+  if (size > 49 * 1024 * 1024) throw new Error(`${assetName} is ${(size / 1048576).toFixed(0)} MB, over the 50 MB Supabase limit, and no GitHub release target is configured`);
+  return upload("videos", `${id}/${assetName}`, file, contentType);
 }
 
 async function main() {
@@ -103,6 +106,20 @@ async function main() {
     });
     await patch(id, { progress: 50, message: `Verified: ${report.summary.verdict}`, brief, verification: report });
 
+    // The printable guide comes from the same verified brief, before any narration.
+    const guideOnly = job.outputs === "guide";
+    await patch(id, { status: "guide", progress: guideOnly ? 55 : 50, message: "Laying out the Plan Reader's Guide" });
+    const guideFile = path.join(work, "guide.pdf");
+    const g = await renderGuide(brief, pages, { outFile: guideFile, workDir: path.join(work, "guide"), verification: report });
+    const guideUrl = await publishFile(id, guideFile, "guide.pdf", job.original_name, "application/pdf");
+    const thumbs: string[] = [];
+    for (const p of pages) thumbs.push(await upload("videos", `${id}/page-${p.index}.jpg`, p.thumbPath, "image/jpeg"));
+    await patch(id, { progress: guideOnly ? 95 : 51, message: `Guide ready (${g.pages} pages)`, guide_url: guideUrl, page_urls: thumbs });
+    if (guideOnly) {
+      await patch(id, { status: "done", progress: 100, message: "Done" });
+      return;
+    }
+
     await patch(id, { status: "narrating", progress: 51, message: "Recording narration" });
     const audio: Narration[] = [];
     for (let i = 0; i < brief.segments.length; i++) {
@@ -125,12 +142,8 @@ async function main() {
     await patch(id, { status: "uploading", progress: 93, message: "Compressing and uploading the video" });
     const web = path.join(work, "video.mp4");
     await run("ffmpeg", ["-y", "-loglevel", "error", "-i", master, "-c:v", "libx264", "-preset", "veryfast", "-crf", String(process.env.WEB_CRF || 27), "-pix_fmt", "yuv420p", "-tune", "stillimage", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", web]);
-    const videoUrl = await publishVideo(id, web, job.original_name);
-    // small page images for the script view on the site
-    const thumbs: string[] = [];
-    for (const p of pages) thumbs.push(await upload("videos", `${id}/page-${p.index}.jpg`, p.thumbPath, "image/jpeg"));
-
-    await patch(id, { status: "done", progress: 100, message: "Done", video_url: videoUrl, duration_sec: total, segment_starts: starts, page_urls: thumbs });
+    const videoUrl = await publishFile(id, web, "video.mp4", job.original_name, "video/mp4");
+    await patch(id, { status: "done", progress: 100, message: "Done", video_url: videoUrl, duration_sec: total, segment_starts: starts });
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error(err);

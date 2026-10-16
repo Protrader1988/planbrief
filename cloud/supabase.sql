@@ -46,3 +46,7 @@ create policy "public read videos" on storage.objects for select to anon using (
 do $$ begin
   alter publication supabase_realtime add table public.jobs;
 exception when duplicate_object then null; end $$;
+
+-- v2: printable guide and output choice ('video' = guide + video, 'guide' = guide only)
+alter table public.jobs add column if not exists outputs text not null default 'video';
+alter table public.jobs add column if not exists guide_url text;

@@ -46,8 +46,8 @@ const CFG = window.PLANBRIEF_CONFIG || {};
 const app = document.getElementById("app");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-const ORDER = ["queued", "ingesting", "analyzing", "verifying", "narrating", "rendering", "uploading", "done"];
-const STEPS = [["queued", "ingesting", "1 · Read pages"], ["analyzing", "2 · Write script"], ["verifying", "3 · Verify ×3"], ["narrating", "rendering", "uploading", "4 · Narrate and film"]];
+const ORDER = ["queued", "ingesting", "analyzing", "verifying", "guide", "narrating", "rendering", "uploading", "done"];
+const STEPS = [["queued", "ingesting", "1 · Read pages"], ["analyzing", "2 · Write script"], ["verifying", "3 · Verify ×3"], ["guide", "4 · Lay out guide"], ["narrating", "rendering", "uploading", "5 · Narrate and film"]];
 
 if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
   app.innerHTML = `<div class="setup"><strong>Not configured yet.</strong> cloud/site/config.js needs supabaseUrl and supabaseAnonKey.</div>`;
@@ -59,29 +59,31 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
   async function homePage() {
     const { data: jobs } = await sb.from("jobs").select("id,created_at,original_name,status,message,page_count,brief").order("created_at", { ascending: false }).limit(20);
     app.innerHTML = `
-      <h1>Turn any bid package into a video you can actually follow.</h1>
-      <p class="lead">Upload an RFP, RFQ, drawing set or spec book. You get a narrated, triple-verified walkthrough filmed over the real pages, plus a written brief. Come back to this page any time; the job keeps running in the cloud.</p>
+      <h1>Turn any bid package into something anyone can follow.</h1>
+      <p class="lead">Upload an RFP, RFQ, drawing set or spec book. Get a Plan Reader's Guide: a printable PDF that walks the real sheets top to bottom with the discussed areas boxed and explained in plain English. Add the narrated video if you want to watch instead of read. Everything is triple-verified against the sheets, and the job keeps running in the cloud after you close this page.</p>
       <div class="card">
         <label class="drop" id="drop"><strong id="dropLabel">Tap to choose a PDF</strong><span id="dropSub">RFP · RFQ · drawings · specs, up to 200 MB</span><input id="file" type="file" accept="application/pdf,.pdf" hidden></label>
-        <div class="row" style="margin-top:16px;justify-content:space-between"><span class="muted" style="font-size:13px">Typical run: 30 to 60 minutes. Safe to close the page.</span><button class="btn" id="go" disabled>Make the video</button></div>
+        <div class="row" style="margin-top:16px;gap:10px;flex-wrap:wrap"><button class="btn" id="goGuide" disabled>Guide only</button><button class="btn" id="go" disabled>Guide + video</button><span class="muted" style="font-size:13px">Guide: about 10 to 20 minutes. With video: 30 to 60. Safe to close the page.</span></div>
         <p class="err" id="err"></p>
       </div>
       <div class="list" id="jobs"></div>`;
     renderJobs(jobs || []);
-    const file = document.getElementById("file"), go = document.getElementById("go"), err = document.getElementById("err");
+    const file = document.getElementById("file"), go = document.getElementById("go"), goGuide = document.getElementById("goGuide"), err = document.getElementById("err");
     let picked = null;
-    file.onchange = () => { picked = file.files[0]; if (picked) { document.getElementById("dropLabel").textContent = picked.name; document.getElementById("dropSub").textContent = (picked.size / 1048576).toFixed(1) + " MB"; go.disabled = false; } };
-    go.onclick = async () => {
-      if (!picked) return; go.disabled = true; go.textContent = "Uploading…"; err.textContent = "";
+    file.onchange = () => { picked = file.files[0]; if (picked) { document.getElementById("dropLabel").textContent = picked.name; document.getElementById("dropSub").textContent = (picked.size / 1048576).toFixed(1) + " MB"; go.disabled = false; goGuide.disabled = false; } };
+    const start = async (outputs) => {
+      if (!picked) return; go.disabled = true; goGuide.disabled = true; (outputs === "guide" ? goGuide : go).textContent = "Uploading…"; err.textContent = "";
       try {
         const key = `${crypto.randomUUID()}/${picked.name.replace(/[^\w.\- ]+/g, "_")}`;
         const up = await sb.storage.from("uploads").upload(key, picked, { contentType: "application/pdf", upsert: false });
         if (up.error) throw up.error;
-        const ins = await sb.from("jobs").insert({ original_name: picked.name, upload_path: key }).select("id").single();
+        const ins = await sb.from("jobs").insert({ original_name: picked.name, upload_path: key, outputs }).select("id").single();
         if (ins.error) throw ins.error;
         location.href = `?job=${ins.data.id}`;
-      } catch (e) { err.textContent = e.message || String(e); go.disabled = false; go.textContent = "Make the video"; }
+      } catch (e) { err.textContent = e.message || String(e); go.disabled = false; goGuide.disabled = false; go.textContent = "Guide + video"; goGuide.textContent = "Guide only"; }
     };
+    go.onclick = () => start("video");
+    goGuide.onclick = () => start("guide");
     sb.channel("jobs-list").on("postgres_changes", { event: "*", schema: "public", table: "jobs" }, async () => {
       const { data } = await sb.from("jobs").select("id,created_at,original_name,status,message,page_count,brief").order("created_at", { ascending: false }).limit(20);
       renderJobs(data || []);
@@ -104,7 +106,7 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
     function draw() {
       if (!job) { app.innerHTML = `<p class="err">Job not found.</p>`; return; }
       const idx = ORDER.indexOf(job.status);
-      const steps = STEPS.map((s) => { const label = s[s.length - 1], keys = s.slice(0, -1); const on = keys.includes(job.status); const ok = idx > ORDER.indexOf(keys[keys.length - 1]); return `<div class="step ${on ? "on" : ""} ${ok ? "ok" : ""}">${ok ? "✓ " : ""}${label}</div>`; }).join("");
+      const steps = STEPS.filter((s) => !(job.outputs === "guide" && s[0] === "narrating")).map((s) => { const label = s[s.length - 1], keys = s.slice(0, -1); const on = keys.includes(job.status); const ok = idx > ORDER.indexOf(keys[keys.length - 1]); return `<div class="step ${on ? "on" : ""} ${ok ? "ok" : ""}">${ok ? "✓ " : ""}${label}</div>`; }).join("");
       const b = job.brief;
       const segs = b ? b.segments.map((s, i) => `
         <div class="seg" onclick="seek(${i})">${job.page_urls ? `<img src="${esc(job.page_urls[s.page])}" loading="lazy" alt="">` : ""}<div><div class="t"><span>${esc(s.title)}</span><small>${job.segment_starts ? fmt(job.segment_starts[i]) + " · " : ""}sheet ${s.page + 1}</small></div><p>${esc(s.narration)}</p></div></div>`).join("") : "";
@@ -115,7 +117,9 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
         <div class="muted" style="font-size:13px;margin-top:8px">${m.totals.verified + (m.totals.cited || 0)} of ${m.totals.claims} figures matched to the sheets · reviewer: ${v.reviewer.ran ? v.reviewer.issues.length + " findings" : "skipped"} · audit: ${v.auditor.ran ? v.auditor.issues.length + " findings" : "skipped"}${v.fixes.applied ? " · " + v.fixes.applied + " segments corrected" : ""}</div></div>` : "";
       app.innerHTML = `
         <h1>${esc(b?.projectName || job.original_name)}</h1>${b?.oneLiner ? `<p class="lead">${esc(b.oneLiner)}</p>` : ""}
+        ${job.guide_url ? `<div class="card" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>Plan Reader's Guide</strong><div class="muted" style="font-size:13px">Printable PDF: every sheet with the discussed areas boxed and explained, the written brief, and terms explained.</div></div><a class="btn" href="${esc(job.guide_url)}" target="_blank" rel="noopener">Open the guide</a></div></div>` : ""}
         ${job.status === "done" && job.video_url ? `<div class="card" style="padding:0;overflow:hidden"><video id="v" src="${esc(job.video_url)}" controls playsinline preload="metadata"></video><div class="row" style="padding:14px;justify-content:space-between"><span class="muted" style="font-size:13px">${fmt(job.duration_sec || 0)} · ${job.page_count} pages · ${b?.segments.length} parts</span><a class="btn ghost" href="${esc(job.video_url)}" download>Download</a></div></div>`
+        : job.status === "done" ? ""
         : `<div class="card"><div class="row" style="justify-content:space-between"><strong>${job.status === "error" ? "Something went wrong" : esc(job.message)}</strong><span class="muted">${job.progress}%</span></div><div class="progress"><div style="width:${job.progress}%"></div></div>${job.status === "error" ? `<p class="err" style="font-size:14px">${esc(job.error)}</p>` : `<div class="steps">${steps}</div><p class="muted" style="font-size:13px;margin-bottom:0">You can close this page. Reopen the link to see the result.</p>`}</div>`}
         ${verif}
         ${b ? `<h2>Walkthrough</h2>${segs}<h2>Written brief</h2><div class="grid2">${sum}</div>` : ""}
