@@ -130,7 +130,14 @@ async function main() {
         await run("ffmpeg", ["-y", "-loglevel", "error", "-i", p.imagePath, "-vf", "scale='min(2600,iw)':-2", "-q:v", "4", jpg]);
         sheetUrls.push(await upload("videos", `${id}/sheet-${p.index}.jpg`, jpg, "image/jpeg"));
       }
-      await patch(id, { measure: { pages: measure.pages.map((m: Record<string, unknown>) => ({ ...m, overlay: undefined })) }, sheet_urls: sheetUrls });
+      for (const m of measure.pages as Record<string, unknown>[]) {
+        if (typeof m.snap_file === "string") {
+          m.snap_url = await upload("videos", `${id}/${m.snap_file}`, path.join(mdir, m.snap_file), "application/json");
+          delete m.snap_file;
+        }
+        delete m.overlay;
+      }
+      await patch(id, { measure: { pages: measure.pages }, sheet_urls: sheetUrls });
     } catch (e) {
       console.warn("scale detection failed:", e);
     }

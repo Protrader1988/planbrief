@@ -292,6 +292,15 @@ def main():
                 d.line([(x0 * ok, y0 * ok), (x1 * ok, y1 * ok)], fill=(120, 130, 145, 255), width=1)
         entry["width_pt"] = page.width; entry["height_pt"] = page.height
         entry["default_pt_per_ft"] = default_scale
+        # snap geometry for the measure tool: the drawn lines, in page points, longest first, capped
+        min_len = 0.4 * default_scale
+        snap = [(round(a, 1), round(b, 1), round(c, 1), round(d, 1)) for a, b, c, d in segs if math.hypot(c - a, d - b) >= min_len]
+        snap.sort(key=lambda t: -math.hypot(t[2] - t[0], t[3] - t[1]))
+        snap = snap[:25000]
+        flat = [v for seg in snap for v in seg]
+        with open(os.path.join(out_dir, f"snap-{i}.json"), "w") as f:
+            json.dump({"page": i, "width_pt": page.width, "height_pt": page.height, "segs": flat}, f, separators=(",", ":"))
+        entry["snap_file"] = f"snap-{i}.json"
         entry["scale_labels"] = [{"text": t, "pt_per_ft": s, "x": x, "y": y} for s, t, x, y in scales]
         if "--rooms" in sys.argv:
             labs = room_labels(words, (labels_arg or {}).get(str(i)))

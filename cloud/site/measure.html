@@ -43,6 +43,8 @@
   </div>
   <button class="btn ghost" id="finish" style="display:none">Finish shape</button>
   <button class="btn ghost" id="undo">Undo point</button>
+  <button class="tool on" id="snapBtn" title="Snap to drawn lines">Snap</button>
+  <button class="tool" id="orthoBtn" title="Lock to horizontal / vertical">Ortho</button>
 </header>
 <main>
   <div id="stage">
@@ -99,16 +101,32 @@ let job, pages = [], sheet = 0, img = new Image(), imgW = 0, imgH = 0;
 let view = { x: 0, y: 0, k: 1 };
 let tool = "pan", pts = [], meas = [];
 let pxPerFt = 1; // on the sheet image
+let snapOn = true, orthoOn = false, snapSegs = null, snapGrid = null, snapCell = 40, snapHit = null;
 
 const stage = document.getElementById("stage"), cImg = document.getElementById("img"), cDraw = document.getElementById("draw");
 const ctxI = cImg.getContext("2d"), ctxD = cDraw.getContext("2d");
 const readout = document.getElementById("readout"), hint = document.getElementById("hint"), scaleTag = document.getElementById("scaleTag");
 
+let heightPresets = [];
+function findHeights(job) {
+  const out = new Map();
+  for (const it of job.takeoff?.items || []) {
+    const d = (it.description + " " + (it.sourceText || "")).toLowerCase();
+    if (!/ceiling|height|clear|floor to|wall ht|story/.test(d)) continue;
+    let ft = null;
+    if (typeof it.quantity === "number" && /^(ft|lf|feet)$/i.test(it.unit)) ft = it.quantity;
+    const m = /(\d{1,2})'\s*-?\s*(\d{1,2})?(?:\s?(\d)\/(\d))?"/.exec(it.sourceText || "");
+    if (ft == null && m) ft = +m[1] + (+(m[2] || 0) + (m[3] ? +m[3] / +m[4] : 0)) / 12;
+    if (ft && ft >= 6 && ft <= 30) { const key = ft.toFixed(2); if (!out.has(key)) out.set(key, { ft, label: `${fmtFt(ft)} (${it.description.slice(0, 40)}, sheet ${it.sheet + 1})` }); }
+  }
+  return [...out.values()].sort((a, b) => a.ft - b.ft);
+}
 async function init() {
-  const { data } = await sb.from("jobs").select("id,original_name,brief,measure,sheet_urls,page_urls,page_count").eq("id", jobId).single();
+  const { data } = await sb.from("jobs").select("id,original_name,brief,measure,sheet_urls,page_urls,page_count,takeoff").eq("id", jobId).single();
   job = data; if (!job) { document.body.innerHTML = "<p style='padding:20px'>Job not found.</p>"; return; }
   document.title = `Measure · ${job.brief?.projectName || job.original_name}`;
   pages = (job.sheet_urls || job.page_urls || []);
+  heightPresets = findHeights(job);
   const sel = document.getElementById("sheet");
   sel.innerHTML = pages.map((u, i) => `<option value="${i}">Sheet ${i + 1}${sheetTitle(i)}</option>`).join("");
   sel.onchange = () => loadSheet(Number(sel.value));
@@ -135,6 +153,8 @@ function loadSheet(i) {
   scaleSel.innerHTML = opts.map((s) => `<option value="${s.pt_per_ft}">${esc(s.text)}</option>`).join("") + `<option value="custom">Set scale by a known dimension…</option>`;
   if (opts.length) { scaleSel.value = String(pm.default_pt_per_ft || opts[0].pt_per_ft); }
   scaleSel.onchange = () => { if (scaleSel.value === "custom") startCalibrate(); else applyScale(Number(scaleSel.value)); };
+  snapSegs = null; snapGrid = null; snapHit = null;
+  if (pm?.snap_url) fetch(pm.snap_url).then((r) => r.json()).then((d) => { if (sheet !== i) return; buildSnap(d); hint.textContent += " Snap is on: taps land on the drawn lines."; }).catch(() => {});
   img = new Image();
   img.crossOrigin = "anonymous";
   img.onload = () => {
@@ -160,6 +180,50 @@ function startCalibrate() {
   hint.textContent = "Tap the two ends of a dimension you know, then enter its length.";
 }
 
+// ---------- snapping to the drawn lines ----------
+function buildSnap(d) {
+  const k = imgW / (d.width_pt || 2592);
+  const f = d.segs, segs = [];
+  for (let i = 0; i < f.length; i += 4) segs.push([f[i] * k, f[i + 1] * k, f[i + 2] * k, f[i + 3] * k]);
+  snapSegs = segs; snapGrid = new Map();
+  const put = (cx, cy, idx) => { const key = cx + "," + cy; (snapGrid.get(key) || snapGrid.set(key, []).get(key)).push(idx); };
+  segs.forEach((sg, idx) => {
+    const x0 = Math.min(sg[0], sg[2]), x1 = Math.max(sg[0], sg[2]), y0 = Math.min(sg[1], sg[3]), y1 = Math.max(sg[1], sg[3]);
+    for (let cx = Math.floor(x0 / snapCell); cx <= Math.floor(x1 / snapCell); cx++) for (let cy = Math.floor(y0 / snapCell); cy <= Math.floor(y1 / snapCell); cy++) put(cx, cy, idx);
+  });
+}
+/** Nearest endpoint first (strong), else nearest point on a line (weaker), within a screen-pixel radius. */
+function snapPoint(ix, iy) {
+  if (!snapOn || !snapSegs) return { p: [ix, iy], kind: null };
+  const rEnd = 14 / view.k, rLine = 8 / view.k;
+  let best = null, bestD = rEnd, bestKind = null;
+  const cx = Math.floor(ix / snapCell), cy = Math.floor(iy / snapCell);
+  const cand = new Set();
+  for (let dx = -1; dx <= 1; dx++) for (let dy = -1; dy <= 1; dy++) for (const idx of (snapGrid.get((cx + dx) + "," + (cy + dy)) || [])) cand.add(idx);
+  for (const idx of cand) {
+    const [x0, y0, x1, y1] = snapSegs[idx];
+    for (const [ex, ey] of [[x0, y0], [x1, y1]]) { const d = Math.hypot(ex - ix, ey - iy); if (d < bestD) { bestD = d; best = [ex, ey]; bestKind = "end"; } }
+  }
+  if (!best) {
+    bestD = rLine;
+    for (const idx of cand) {
+      const [x0, y0, x1, y1] = snapSegs[idx];
+      const dx = x1 - x0, dy = y1 - y0, L2 = dx * dx + dy * dy; if (!L2) continue;
+      let t = ((ix - x0) * dx + (iy - y0) * dy) / L2; t = Math.max(0, Math.min(1, t));
+      const px = x0 + t * dx, py = y0 + t * dy, d = Math.hypot(px - ix, py - iy);
+      if (d < bestD) { bestD = d; best = [px, py]; bestKind = "line"; }
+    }
+  }
+  return best ? { p: best, kind: bestKind } : { p: [ix, iy], kind: null };
+}
+function orthoPoint(p) {
+  if (!orthoOn || !pts.length || tool === "count") return p;
+  const [px, py] = pts[pts.length - 1];
+  return Math.abs(p[0] - px) > Math.abs(p[1] - py) ? [p[0], py] : [px, p[1]];
+}
+document.getElementById("snapBtn").onclick = (e) => { snapOn = !snapOn; e.target.classList.toggle("on", snapOn); };
+document.getElementById("orthoBtn").onclick = (e) => { orthoOn = !orthoOn; e.target.classList.toggle("on", orthoOn); };
+
 // ---------- view ----------
 function fit() {
   const W = stage.clientWidth, H = stage.clientHeight;
@@ -178,6 +242,7 @@ function draw() {
   for (const m of meas.filter((x) => x.sheet === sheet)) drawShape(m.points, m.kind, "rgba(56,189,248,.9)", "rgba(56,189,248,.18)", `${m.name || ""} ${fmtVal(m)}`);
   // in-progress
   if (pts.length) drawShape(pts, calibrating ? "length" : tool, "rgba(245,158,11,1)", "rgba(245,158,11,.2)", null, true);
+  if (snapHit) { const [x, y] = toScr(snapHit[0], snapHit[1]); ctxD.beginPath(); ctxD.arc(x, y, 8, 0, Math.PI * 2); ctxD.lineWidth = 2; ctxD.strokeStyle = "#22c55e"; ctxD.stroke(); }
   updateReadout();
 }
 function drawShape(p, kind, stroke, fill, label, live) {
@@ -214,7 +279,10 @@ function updateReadout() {
 let pointers = new Map(), lastDist = 0, moved = false, downAt = null;
 stage.addEventListener("pointerdown", (e) => { stage.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); moved = false; downAt = [e.clientX, e.clientY]; });
 stage.addEventListener("pointermove", (e) => {
-  if (!pointers.has(e.pointerId)) return;
+  if (!pointers.has(e.pointerId)) {
+    if (tool !== "pan" && e.pointerType === "mouse") { const r = stage.getBoundingClientRect(); const p = toImg(e.clientX - r.left, e.clientY - r.top); const sn = snapPoint(p[0], p[1]); snapHit = sn.kind ? sn.p : null; draw(); }
+    return;
+  }
   const prev = pointers.get(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]);
   if (pointers.size === 1) {
     const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
@@ -242,7 +310,9 @@ function zoomAt(cx, cy, f) {
 }
 function addPoint(cx, cy) {
   const r = stage.getBoundingClientRect();
-  const p = toImg(cx - r.left, cy - r.top);
+  let p = toImg(cx - r.left, cy - r.top);
+  const sn = snapPoint(p[0], p[1]); p = orthoPoint(sn.p);
+  snapHit = null;
   pts.push(p);
   if (calibrating && pts.length === 2) { finishCalibrate(); return; }
   if (!calibrating && tool === "length" && pts.length === 2) { commit(); return; }
@@ -301,12 +371,12 @@ function assemblyOptions(kind, cur) {
 function renderList() {
   const el = document.getElementById("tab-m");
   if (!meas.length) { el.innerHTML = `<p class="muted small">No measurements yet. Pick Length, Area or Count and tap on the sheet. Everything saves to this job and shows in the buy list.</p>`; }
-  else el.innerHTML = `<table><thead><tr><th>Sheet</th><th>Name</th><th class="num">Value</th><th>Height</th><th>Assembly</th><th></th></tr></thead><tbody>${meas.map((m) => `
+  else el.innerHTML = `<datalist id="hts">${heightPresets.map((h) => `<option value="${h.ft.toFixed(2)}">${esc(h.label)}</option>`).join("")}</datalist>${heightPresets.length ? `<p class="muted small" style="margin:0 0 6px">Heights read from this set: ${heightPresets.map((h) => esc(fmtFt(h.ft))).join(", ")}. Pick one in the Height box.</p>` : ""}<table><thead><tr><th>Sheet</th><th>Name</th><th class="num">Value</th><th>Height</th><th>Assembly</th><th></th></tr></thead><tbody>${meas.map((m) => `
     <tr>
       <td class="muted">${m.sheet + 1}</td>
       <td><input type="text" value="${esc(m.name)}" style="width:150px" onchange="update('${m.id}',{name:this.value})"></td>
       <td class="num">${fmtVal(m)}</td>
-      <td>${m.kind === "length" ? `<input type="number" step="0.5" value="${m.height_ft ?? 10}" style="width:64px" onchange="update('${m.id}',{height_ft:+this.value})"> ft` : ""}</td>
+      <td>${m.kind === "length" ? `<input type="number" step="0.25" list="hts" value="${m.height_ft ?? 10}" style="width:70px" onchange="update('${m.id}',{height_ft:+this.value})"> ft` : ""}</td>
       <td><select onchange="update('${m.id}',{assembly:this.value})" style="max-width:260px">${assemblyOptions(m.kind, m.assembly)}</select></td>
       <td><button class="x" title="Remove" onclick="update('${m.id}',{deleted:true}).then(()=>{meas=meas.filter(x=>x.id!=='${m.id}');renderList();draw()})">×</button></td>
     </tr>`).join("")}</tbody></table>`;
