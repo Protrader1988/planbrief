@@ -97,7 +97,7 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
     let job = null;
     const load = async () => { const { data } = await sb.from("jobs").select("*").eq("id", id).single(); job = data; draw(); };
     await load();
-    sb.channel("job-" + id).on("postgres_changes", { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${id}` }, (p) => { job = p.new; draw(); }).subscribe();
+    sb.channel("job-" + id).on("postgres_changes", { event: "UPDATE", schema: "public", table: "jobs", filter: `id=eq.${id}` }, (p) => { job = { ...job, ...p.new, brief: p.new.brief ?? job?.brief, verification: p.new.verification ?? job?.verification }; draw(); load(); }).subscribe();
     // fallback poll while running
     setInterval(() => { if (job && job.status !== "done" && job.status !== "error") load(); }, 15000);
 
