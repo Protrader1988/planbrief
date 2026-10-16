@@ -7,6 +7,7 @@ import Anthropic from "@anthropic-ai/sdk";
 import fs from "node:fs/promises";
 import path from "node:path";
 import { spawn } from "node:child_process";
+import { jsonrepair } from "jsonrepair";
 
 export type Provider = "api" | "claude-code" | "manual" | "mock";
 
@@ -35,9 +36,18 @@ export type JsonRequest = {
 };
 
 export async function askJson<T>(req: JsonRequest): Promise<T> {
-  if (PROVIDER === "api") return askApi<T>(req);
-  if (PROVIDER === "claude-code") return askClaudeCode<T>(req);
-  throw new Error(`Provider ${PROVIDER} cannot run model calls`);
+  if (PROVIDER !== "api" && PROVIDER !== "claude-code") throw new Error(`Provider ${PROVIDER} cannot run model calls`);
+  // One retry: a malformed answer or a transient CLI failure should not knock out a check.
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      return PROVIDER === "api" ? await askApi<T>(req) : await askClaudeCode<T>(req);
+    } catch (e) {
+      lastErr = e;
+      console.warn(`${req.name}: attempt ${attempt + 1} failed: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+  throw lastErr;
 }
 
 async function askApi<T>(req: JsonRequest): Promise<T> {
@@ -107,6 +117,11 @@ export function parseJsonLoose<T>(raw: string): T {
   } catch {
     const m = /\{[\s\S]*\}/.exec(trimmed);
     if (!m) throw new Error("No JSON object found in the answer");
-    return JSON.parse(m[0]);
+    try {
+      return JSON.parse(m[0]);
+    } catch {
+      // trailing commas, unescaped quotes, truncated tails: repair rather than fail the check
+      return JSON.parse(jsonrepair(m[0]));
+    }
   }
 }
