@@ -18,7 +18,8 @@ import { verifyBrief } from "../src/lib/review";
 import { synthesizeNarration, type Narration } from "../src/lib/tts";
 import { renderVideo } from "../src/lib/render";
 import { renderGuide } from "../src/lib/guide";
-import { extractTakeoff, writeTakeoffXlsx } from "../src/lib/takeoff";
+import { extractTakeoff, writeTakeoffXlsx, type Takeoff } from "../src/lib/takeoff";
+import { buildTradePackages, renderTradePackagesPdf, renderOneTradePdf } from "../src/lib/trades";
 
 const run = promisify(execFile);
 const SUPABASE_URL = process.env.SUPABASE_URL!;
@@ -135,17 +136,40 @@ async function main() {
     }
 
     // First-pass quantity takeoff from the same sheets, checked two ways.
+    let takeoff: Takeoff | null = null;
     if (job.outputs !== "video-only") {
       await patch(id, { status: "takeoff", message: "Taking off quantities" });
       try {
-        const t = await extractTakeoff(pages, brief, path.join(work, "takeoff"), (m) => patch(id, { message: m }));
+        takeoff = await extractTakeoff(pages, brief, path.join(work, "takeoff"), (m) => patch(id, { message: m }));
         const xlsx = path.join(work, "takeoff.xlsx");
-        await writeTakeoffXlsx(t, brief, xlsx);
+        await writeTakeoffXlsx(takeoff, brief, xlsx);
         const takeoffUrl = await publishFile(id, xlsx, "takeoff.xlsx", job.original_name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-        await patch(id, { progress: guideOnly ? 97 : 52, message: `Takeoff: ${t.items.length} lines`, takeoff: t, takeoff_url: takeoffUrl });
+        await patch(id, { progress: guideOnly ? 90 : 52, message: `Takeoff: ${takeoff.items.length} lines`, takeoff, takeoff_url: takeoffUrl });
       } catch (e) {
         console.warn("takeoff failed:", e);
         await patch(id, { message: "Takeoff skipped: " + (e instanceof Error ? e.message : String(e)).slice(0, 200) });
+      }
+
+      // Trade packages: one scope sheet per trade, ready to send for pricing.
+      await patch(id, { status: "trades", message: "Writing trade packages" });
+      try {
+        const tdir = path.join(work, "trades");
+        const packages = await buildTradePackages(brief, takeoff, pages, path.join(tdir, "llm"));
+        const all = path.join(tdir, "trade-packages.pdf");
+        await renderTradePackagesPdf(brief, packages, all);
+        const tradesUrl = await publishFile(id, all, "trade-packages.pdf", job.original_name, "application/pdf");
+        const withUrls = [];
+        for (const pk of packages) {
+          const slug = pk.trade.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "").slice(0, 40);
+          const f = path.join(tdir, `trade-${slug}.pdf`);
+          await renderOneTradePdf(brief, pk, f);
+          const url = await publishFile(id, f, `trade-${slug}.pdf`, job.original_name, "application/pdf");
+          withUrls.push({ ...pk, url });
+        }
+        await patch(id, { progress: guideOnly ? 97 : 53, message: `${packages.length} trade packages`, trades: withUrls, trades_url: tradesUrl });
+      } catch (e) {
+        console.warn("trade packages failed:", e);
+        await patch(id, { message: "Trade packages skipped: " + (e instanceof Error ? e.message : String(e)).slice(0, 200) });
       }
     }
     if (guideOnly) {

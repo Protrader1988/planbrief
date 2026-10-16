@@ -81,3 +81,7 @@ drop policy if exists "public measurements select" on public.measurements;
 create policy "public measurements select" on public.measurements for select to anon using (true);
 drop policy if exists "public measurements update" on public.measurements;
 create policy "public measurements update" on public.measurements for update to anon using (true) with check (true);
+
+-- v5: trade packages
+alter table public.jobs add column if not exists trades jsonb;
+alter table public.jobs add column if not exists trades_url text;

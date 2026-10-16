@@ -47,8 +47,8 @@ const CFG = window.PLANBRIEF_CONFIG || {};
 const app = document.getElementById("app");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-const ORDER = ["queued", "ingesting", "analyzing", "verifying", "guide", "takeoff", "narrating", "rendering", "uploading", "done"];
-const STEPS = [["queued", "ingesting", "1 · Read pages"], ["analyzing", "2 · Write script"], ["verifying", "3 · Verify ×3"], ["guide", "4 · Lay out guide"], ["takeoff", "5 · Takeoff"], ["narrating", "rendering", "uploading", "6 · Narrate and film"]];
+const ORDER = ["queued", "ingesting", "analyzing", "verifying", "guide", "takeoff", "trades", "narrating", "rendering", "uploading", "done"];
+const STEPS = [["queued", "ingesting", "1 · Read pages"], ["analyzing", "2 · Write script"], ["verifying", "3 · Verify ×3"], ["guide", "4 · Lay out guide"], ["takeoff", "trades", "5 · Takeoff and trade packages"], ["narrating", "rendering", "uploading", "6 · Narrate and film"]];
 
 if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
   app.innerHTML = `<div class="setup"><strong>Not configured yet.</strong> cloud/site/config.js needs supabaseUrl and supabaseAnonKey.</div>`;
@@ -90,6 +90,19 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
       renderJobs(data || []);
     }).subscribe();
   }
+  function tradesHtml(job) {
+    const t = job.trades; if (!t || !t.length) return "";
+    return `<h2>Trade packages <span class="muted" style="font-weight:400;font-size:14px">${t.length} trades, ready to send for pricing</span></h2>
+      <div class="card"><div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:8px"><span class="muted" style="font-size:13px">Each package: scope with sheet and keynote references, quantities, exclusions, coordination, RFIs to raise, dates, and a paste-ready invitation email.</span>${job.trades_url ? `<a class="btn ghost" href="${esc(job.trades_url)}" target="_blank" rel="noopener">All packages (PDF)</a>` : ""}</div>
+      ${t.map((p, i) => `<details><summary><strong>${esc(p.trade)}</strong> <span class="muted">${esc(p.csi)} · ${p.scope.length} scope items · ${p.questions.length} RFIs</span></summary>
+        <p style="font-size:14px;color:#c9d3e8">${esc(p.summary)}</p>
+        <ul style="font-size:13px;color:#c9d3e8">${p.scope.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>
+        ${p.exclusions?.length ? `<div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-top:8px">Exclusions</div><ul style="font-size:13px;color:#c9d3e8">${p.exclusions.map((s) => `<li>${esc(s)}</li>`).join("")}</ul>` : ""}
+        ${p.questions?.length ? `<div class="muted" style="font-size:12px;text-transform:uppercase;letter-spacing:.05em;margin-top:8px">RFIs to raise</div><ol style="font-size:13px;color:#c9d3e8">${p.questions.map((s) => `<li>${esc(s)}</li>`).join("")}</ol>` : ""}
+        <div class="row" style="margin-top:10px">${p.url ? `<a class="btn ghost" href="${esc(p.url)}" target="_blank" rel="noopener">Open package (PDF)</a>` : ""}<button class="btn ghost" onclick="copyEmail(${i})">Copy invitation email</button><a class="btn ghost" href="mailto:?subject=${encodeURIComponent(p.email.subject)}&body=${encodeURIComponent(p.email.body + (p.url ? "\n\nTrade package: " + p.url : ""))}">Open in Mail</a></div>
+      </details>`).join("")}</div>`;
+  }
+  window.copyEmail = (i) => { const p = window._job.trades[i]; navigator.clipboard.writeText(`Subject: ${p.email.subject}\n\n${p.email.body}${p.url ? "\n\nTrade package: " + p.url : ""}`).then(() => alert("Email copied. Paste it into your mail app and add the sub's name and the dates.")); };
   function takeoffHtml(job) {
     const t = job.takeoff; if (!t || !t.items?.length) return "";
     const cats = [...new Set(t.items.map((i) => i.category))];
@@ -116,6 +129,7 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
     setInterval(() => { if (job && job.status !== "done" && job.status !== "error") load(); }, 15000);
 
     function draw() {
+      window._job = job;
       if (!job) { app.innerHTML = `<p class="err">Job not found.</p>`; return; }
       const idx = ORDER.indexOf(job.status);
       const steps = STEPS.filter((s) => !(job.outputs === "guide" && s[0] === "narrating")).map((s) => { const label = s[s.length - 1], keys = s.slice(0, -1); const on = keys.includes(job.status); const ok = idx > ORDER.indexOf(keys[keys.length - 1]); return `<div class="step ${on ? "on" : ""} ${ok ? "ok" : ""}">${ok ? "✓ " : ""}${label}</div>`; }).join("");
@@ -134,6 +148,7 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
         : job.status === "done" ? ""
         : `<div class="card"><div class="row" style="justify-content:space-between"><strong>${job.status === "error" ? "Something went wrong" : esc(job.message)}</strong><span class="muted">${job.progress}%</span></div><div class="progress"><div style="width:${job.progress}%"></div></div>${job.status === "error" ? `<p class="err" style="font-size:14px">${esc(job.error)}</p>` : `<div class="steps">${steps}</div><p class="muted" style="font-size:13px;margin-bottom:0">You can close this page. Reopen the link to see the result.</p>`}</div>`}
         ${verif}
+        ${tradesHtml(job)}
         ${takeoffHtml(job)}
         ${b ? `<h2>Walkthrough</h2>${segs}<h2>Written brief</h2><div class="grid2">${sum}</div>` : ""}
         <p style="margin-top:24px"><a class="btn ghost" href="./">← All documents</a></p>`;
