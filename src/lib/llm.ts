@@ -79,11 +79,14 @@ Write the JSON object to ${outFile} with the Write tool. Write nothing else.`;
 
   const bin = process.env.CLAUDE_CODE_BIN || "claude";
   await new Promise<void>((resolve, reject) => {
+    // The prompt goes in on stdin: large scripts blow past the OS argument-size limit (E2BIG).
     const p = spawn(
       bin,
-      ["-p", prompt, "--allowedTools", "Read,Write", "--permission-mode", "acceptEdits", "--output-format", "text"],
-      { cwd: req.workDir, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, CLAUDECODE: "" } },
+      ["-p", "--allowedTools", "Read,Write", "--permission-mode", "acceptEdits", "--output-format", "text"],
+      { cwd: req.workDir, stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, CLAUDECODE: "" } },
     );
+    p.stdin.on("error", () => {});
+    p.stdin.end(prompt);
     let err = "";
     p.stderr.on("data", (d) => (err += d));
     p.stdout.on("data", () => {});

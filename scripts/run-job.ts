@@ -50,6 +50,30 @@ async function upload(bucket: string, objectPath: string, file: string, contentT
   return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${objectPath}`;
 }
 
+/**
+ * Where the finished video lives. Supabase's free tier caps a file at 50 MB, which a real
+ * drawing set exceeds, so inside GitHub Actions the video goes to a GitHub Release on this
+ * repo (2 GB per file, no storage quota on a public repo). Outside Actions, or if the
+ * release fails, small files fall back to Supabase storage.
+ */
+async function publishVideo(id: string, file: string, title: string) {
+  const repo = process.env.GITHUB_REPOSITORY;
+  const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
+  if (repo && token) {
+    try {
+      const tag = `job-${id}`;
+      const env = { ...process.env, GH_TOKEN: token };
+      await run("gh", ["release", "create", tag, `${file}#video.mp4`, "--repo", repo, "--title", `PlanBrief: ${title}`.slice(0, 120), "--notes", `Walkthrough video for job ${id}.`], { env });
+      return `https://github.com/${repo}/releases/download/${tag}/video.mp4`;
+    } catch (e) {
+      console.warn("GitHub release upload failed, falling back to Supabase:", e instanceof Error ? e.message : e);
+    }
+  }
+  const size = (await fs.stat(file)).size;
+  if (size > 49 * 1024 * 1024) throw new Error(`Video is ${(size / 1048576).toFixed(0)} MB, over the 50 MB Supabase limit, and no GitHub release target is configured`);
+  return upload("videos", `${id}/video.mp4`, file, "video/mp4");
+}
+
 async function main() {
   const id = process.argv[2];
   if (!id) throw new Error("usage: run-job.ts <job_id>");
@@ -101,7 +125,7 @@ async function main() {
     await patch(id, { status: "uploading", progress: 93, message: "Compressing and uploading the video" });
     const web = path.join(work, "video.mp4");
     await run("ffmpeg", ["-y", "-loglevel", "error", "-i", master, "-c:v", "libx264", "-preset", "veryfast", "-crf", String(process.env.WEB_CRF || 27), "-pix_fmt", "yuv420p", "-tune", "stillimage", "-c:a", "aac", "-b:a", "96k", "-movflags", "+faststart", web]);
-    const videoUrl = await upload("videos", `${id}/video.mp4`, web, "video/mp4");
+    const videoUrl = await publishVideo(id, web, job.original_name);
     // small page images for the script view on the site
     const thumbs: string[] = [];
     for (const p of pages) thumbs.push(await upload("videos", `${id}/page-${p.index}.jpg`, p.thumbPath, "image/jpeg"));
