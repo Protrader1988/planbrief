@@ -193,7 +193,7 @@ function esc(s: string) {
 }
 
 /** Boundary-aware search: "130" must not match "130.55" or "1300". */
-function has(text: string, v: string, opts: { rounding?: boolean; fraction?: boolean } = {}): boolean {
+export function has(text: string, v: string, opts: { rounding?: boolean; fraction?: boolean } = {}): boolean {
   const startsDigit = /^\d/.test(v);
   const endsDigit = /\d$/.test(v);
   // rounding: "3974" may match "3974.69", "46'4" may match "46'4 1/4" (extracted as 46'44")

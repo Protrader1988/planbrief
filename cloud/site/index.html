@@ -31,6 +31,7 @@
   .grid2 { display:grid; grid-template-columns:1fr; gap:12px } @media (min-width:640px) { .grid2 { grid-template-columns:1fr 1fr } }
   .steps { display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:14px } .step { font-size:12px; padding:9px 10px; border-radius:10px; background:var(--panel2); color:var(--muted) } .step.on { color:var(--text); outline:1px solid var(--accent) } .step.ok { color:var(--ok) }
   .setup { background:rgba(239,68,68,.08); border:1px solid rgba(239,68,68,.3); border-radius:12px; padding:14px; font-size:14px }
+.tablewrap{overflow-x:auto;margin:6px 0 10px}table.tk{width:100%;border-collapse:collapse;font-size:13px}table.tk th,table.tk td{text-align:left;padding:6px 8px;border-bottom:1px solid rgba(255,255,255,0.08);vertical-align:top}table.tk th{font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted,#8b93a1)}table.tk .num{text-align:right;white-space:nowrap}details{margin-top:10px}summary{cursor:pointer;padding:6px 0}
 </style>
 </head>
 <body>
@@ -46,8 +47,8 @@ const CFG = window.PLANBRIEF_CONFIG || {};
 const app = document.getElementById("app");
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const fmt = (s) => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, "0")}`;
-const ORDER = ["queued", "ingesting", "analyzing", "verifying", "guide", "narrating", "rendering", "uploading", "done"];
-const STEPS = [["queued", "ingesting", "1 · Read pages"], ["analyzing", "2 · Write script"], ["verifying", "3 · Verify ×3"], ["guide", "4 · Lay out guide"], ["narrating", "rendering", "uploading", "5 · Narrate and film"]];
+const ORDER = ["queued", "ingesting", "analyzing", "verifying", "guide", "takeoff", "narrating", "rendering", "uploading", "done"];
+const STEPS = [["queued", "ingesting", "1 · Read pages"], ["analyzing", "2 · Write script"], ["verifying", "3 · Verify ×3"], ["guide", "4 · Lay out guide"], ["takeoff", "5 · Takeoff"], ["narrating", "rendering", "uploading", "6 · Narrate and film"]];
 
 if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
   app.innerHTML = `<div class="setup"><strong>Not configured yet.</strong> cloud/site/config.js needs supabaseUrl and supabaseAnonKey.</div>`;
@@ -89,6 +90,17 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
       renderJobs(data || []);
     }).subscribe();
   }
+  function takeoffHtml(job) {
+    const t = job.takeoff; if (!t || !t.items?.length) return "";
+    const cats = [...new Set(t.items.map((i) => i.category))];
+    const badge = (s) => s === "verified" ? `<span class="pill done">verified</span>` : s === "flagged" ? `<span class="pill error">flagged</span>` : s === "derived" ? `<span class="pill live">derived</span>` : `<span class="pill">check</span>`;
+    const rows = (xs) => xs.map((i) => `<tr><td>${esc(i.description)}${i.note || i.flag ? `<div class="muted" style="font-size:12px">${esc([i.note, i.flag].filter(Boolean).join(" · "))}</div>` : ""}</td><td class="num">${i.quantity == null ? "—" : Number(i.quantity).toLocaleString(undefined, { maximumFractionDigits: 2 })}</td><td>${esc(i.unit)}</td><td class="muted">${esc(i.method)}</td><td class="muted">${i.sheet + 1}</td><td>${badge(i.status)}</td></tr>`).join("");
+    const m = t.checks.mechanical;
+    return `<h2>Takeoff <span class="muted" style="font-weight:400;font-size:14px">first pass, ${t.items.length} lines</span></h2>
+      <div class="card"><div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div class="muted" style="font-size:13px">${m.verified} matched to the sheet text · ${m.derived} derived · ${m.unverified} to check · independent estimator check: ${t.checks.estimator.ran ? t.checks.estimator.findings + " findings" : "skipped"}. Every line quotes the sheet it came from; price from the sheets.</div>${job.takeoff_url ? `<a class="btn ghost" href="${esc(job.takeoff_url)}">Download Excel</a>` : ""}</div>
+      ${cats.map((c) => { const xs = t.items.filter((i) => i.category === c); return `<details ${xs.length <= 12 ? "open" : ""}><summary><strong>${esc(c)}</strong> <span class="muted">${xs.length}</span></summary><div class="tablewrap"><table class="tk"><thead><tr><th>Item</th><th class="num">Qty</th><th>Unit</th><th>Method</th><th>Sheet</th><th>Check</th></tr></thead><tbody>${rows(xs)}</tbody></table></div></details>`; }).join("")}
+      ${t.notCountable?.length ? `<details><summary><strong>Not countable from this set</strong> <span class="muted">${t.notCountable.length}</span></summary><ul style="font-size:13px">${t.notCountable.map((n) => `<li><strong>${esc(n.what)}</strong>: ${esc(n.why)} <span class="muted">(${esc(n.where)})</span></li>`).join("")}</ul></details>` : ""}</div>`;
+  }
   function renderJobs(jobs) {
     document.getElementById("jobs").innerHTML = jobs.map((j) => `
       <a class="job" href="?job=${j.id}"><div style="min-width:0"><div class="name">${esc(j.brief?.projectName || j.original_name)}</div><div class="muted" style="font-size:13px">${new Date(j.created_at).toLocaleString()}${j.page_count ? " · " + j.page_count + " pages" : ""}</div></div>
@@ -117,11 +129,12 @@ if (!CFG.supabaseUrl || !CFG.supabaseAnonKey) {
         <div class="muted" style="font-size:13px;margin-top:8px">${m.totals.verified + (m.totals.cited || 0)} of ${m.totals.claims} figures matched to the sheets · reviewer: ${v.reviewer.ran ? v.reviewer.issues.length + " findings" : "skipped"} · audit: ${v.auditor.ran ? v.auditor.issues.length + " findings" : "skipped"}${v.fixes.applied ? " · " + v.fixes.applied + " segments corrected" : ""}</div></div>` : "";
       app.innerHTML = `
         <h1>${esc(b?.projectName || job.original_name)}</h1>${b?.oneLiner ? `<p class="lead">${esc(b.oneLiner)}</p>` : ""}
-        ${job.guide_url ? `<div class="card" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>Plan Reader's Guide</strong><div class="muted" style="font-size:13px">Printable PDF: every sheet with the discussed areas boxed and explained, the written brief, and terms explained.</div></div><a class="btn" href="${esc(job.guide_url)}" target="_blank" rel="noopener">Open the guide</a></div></div>` : ""}
+        ${job.guide_url ? `<div class="card" style="margin-bottom:14px"><div class="row" style="justify-content:space-between;gap:12px;flex-wrap:wrap"><div><strong>Plan Reader's Guide</strong><div class="muted" style="font-size:13px">Printable PDF: every sheet with the discussed areas boxed and explained, the written brief, and terms explained. The takeoff below ships as Excel.</div></div><a class="btn" href="${esc(job.guide_url)}" target="_blank" rel="noopener">Open the guide</a></div></div>` : ""}
         ${job.status === "done" && job.video_url ? `<div class="card" style="padding:0;overflow:hidden"><video id="v" src="${esc(job.video_url)}" controls playsinline preload="metadata"></video><div class="row" style="padding:14px;justify-content:space-between"><span class="muted" style="font-size:13px">${fmt(job.duration_sec || 0)} · ${job.page_count} pages · ${b?.segments.length} parts</span><a class="btn ghost" href="${esc(job.video_url)}" download>Download</a></div></div>`
         : job.status === "done" ? ""
         : `<div class="card"><div class="row" style="justify-content:space-between"><strong>${job.status === "error" ? "Something went wrong" : esc(job.message)}</strong><span class="muted">${job.progress}%</span></div><div class="progress"><div style="width:${job.progress}%"></div></div>${job.status === "error" ? `<p class="err" style="font-size:14px">${esc(job.error)}</p>` : `<div class="steps">${steps}</div><p class="muted" style="font-size:13px;margin-bottom:0">You can close this page. Reopen the link to see the result.</p>`}</div>`}
         ${verif}
+        ${takeoffHtml(job)}
         ${b ? `<h2>Walkthrough</h2>${segs}<h2>Written brief</h2><div class="grid2">${sum}</div>` : ""}
         <p style="margin-top:24px"><a class="btn ghost" href="./">← All documents</a></p>`;
     }

@@ -50,3 +50,7 @@ exception when duplicate_object then null; end $$;
 -- v2: printable guide and output choice ('video' = guide + video, 'guide' = guide only)
 alter table public.jobs add column if not exists outputs text not null default 'video';
 alter table public.jobs add column if not exists guide_url text;
+
+-- v3: first-pass quantity takeoff
+alter table public.jobs add column if not exists takeoff jsonb;
+alter table public.jobs add column if not exists takeoff_url text;

@@ -18,6 +18,7 @@ import { verifyBrief } from "../src/lib/review";
 import { synthesizeNarration, type Narration } from "../src/lib/tts";
 import { renderVideo } from "../src/lib/render";
 import { renderGuide } from "../src/lib/guide";
+import { extractTakeoff, writeTakeoffXlsx } from "../src/lib/takeoff";
 
 const run = promisify(execFile);
 const SUPABASE_URL = process.env.SUPABASE_URL!;
@@ -114,7 +115,22 @@ async function main() {
     const guideUrl = await publishFile(id, guideFile, "guide.pdf", job.original_name, "application/pdf");
     const thumbs: string[] = [];
     for (const p of pages) thumbs.push(await upload("videos", `${id}/page-${p.index}.jpg`, p.thumbPath, "image/jpeg"));
-    await patch(id, { progress: guideOnly ? 95 : 51, message: `Guide ready (${g.pages} pages)`, guide_url: guideUrl, page_urls: thumbs });
+    await patch(id, { progress: guideOnly ? 80 : 51, message: `Guide ready (${g.pages} pages)`, guide_url: guideUrl, page_urls: thumbs });
+
+    // First-pass quantity takeoff from the same sheets, checked two ways.
+    if (job.outputs !== "video-only") {
+      await patch(id, { status: "takeoff", message: "Taking off quantities" });
+      try {
+        const t = await extractTakeoff(pages, brief, path.join(work, "takeoff"), (m) => patch(id, { message: m }));
+        const xlsx = path.join(work, "takeoff.xlsx");
+        await writeTakeoffXlsx(t, brief, xlsx);
+        const takeoffUrl = await publishFile(id, xlsx, "takeoff.xlsx", job.original_name, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
+        await patch(id, { progress: guideOnly ? 97 : 52, message: `Takeoff: ${t.items.length} lines`, takeoff: t, takeoff_url: takeoffUrl });
+      } catch (e) {
+        console.warn("takeoff failed:", e);
+        await patch(id, { message: "Takeoff skipped: " + (e instanceof Error ? e.message : String(e)).slice(0, 200) });
+      }
+    }
     if (guideOnly) {
       await patch(id, { status: "done", progress: 100, message: "Done" });
       return;
