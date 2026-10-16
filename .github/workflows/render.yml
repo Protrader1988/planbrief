@@ -49,7 +49,7 @@ jobs:
         run: npm ci --no-audit --no-fund
       - name: Piper voice
         run: |
-          pip install -q piper-tts
+          pip install -q piper-tts pdfplumber numpy scipy pillow
           mkdir -p data/voices && cd data/voices
           curl -sSL -o v.tar.gz https://github.com/rhasspy/piper/releases/download/v0.0.2/voice-en-us-ryan-high.tar.gz
           tar xzf v.tar.gz && rm v.tar.gz && ls

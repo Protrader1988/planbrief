@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+<meta name="apple-mobile-web-app-capable" content="yes" />
+<meta name="theme-color" content="#0b1020" />
+<title>PlanBrief · Measure</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Crect width='24' height='24' rx='6' fill='%23f59e0b'/%3E%3C/svg%3E" />
+<style>
+  :root { --bg:#0b1020; --panel:#121a2e; --panel2:#192340; --line:rgba(255,255,255,.08); --text:#e9eef8; --muted:#9aa7c2; --accent:#f59e0b; --ok:#22c55e; --danger:#ef4444; }
+  * { box-sizing:border-box } html,body { margin:0; height:100%; background:var(--bg); color:var(--text); font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; overscroll-behavior:none }
+  body { display:flex; flex-direction:column; height:100dvh }
+  header { display:flex; align-items:center; gap:10px; padding:10px 12px; border-bottom:1px solid var(--line); flex-wrap:wrap }
+  header a { color:inherit; text-decoration:none; font-weight:600; display:flex; align-items:center; gap:8px } header a i { width:10px; height:10px; border-radius:3px; background:var(--accent) }
+  select, input, button { font:inherit } select, input[type=text], input[type=number] { background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:8px; padding:7px 9px }
+  .tools { display:flex; gap:6px; flex-wrap:wrap } .tool { background:var(--panel2); color:var(--text); border:1px solid var(--line); border-radius:999px; padding:8px 14px; cursor:pointer } .tool.on { background:var(--accent); color:#1a1304; border-color:var(--accent) }
+  .btn { background:var(--accent); color:#1a1304; border:0; border-radius:999px; padding:8px 14px; font-weight:600; cursor:pointer } .btn.ghost { background:transparent; color:var(--text); border:1px solid var(--line) }
+  main { flex:1; display:grid; grid-template-rows:1fr auto; min-height:0 }
+  #stage { position:relative; overflow:hidden; background:#1a2033; touch-action:none; cursor:crosshair }
+  #stage canvas { position:absolute; left:0; top:0 }
+  #hint { position:absolute; left:12px; top:10px; background:rgba(11,16,32,.85); padding:6px 10px; border-radius:8px; font-size:13px; color:var(--muted); pointer-events:none }
+  #scaleTag { position:absolute; right:12px; top:10px; background:rgba(11,16,32,.85); padding:6px 10px; border-radius:8px; font-size:13px; pointer-events:none }
+  #readout { position:absolute; left:12px; bottom:12px; background:rgba(245,158,11,.95); color:#1a1304; font-weight:700; padding:8px 12px; border-radius:10px; font-size:16px; pointer-events:none; display:none }
+  #panel { border-top:1px solid var(--line); background:var(--panel); max-height:42vh; overflow:auto; padding:10px 12px }
+  table { width:100%; border-collapse:collapse; font-size:13px } th, td { text-align:left; padding:6px 6px; border-bottom:1px solid var(--line); vertical-align:middle } th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted) } td.num { text-align:right; white-space:nowrap }
+  .muted { color:var(--muted) } .small { font-size:12px }
+  .tabs { display:flex; gap:6px; margin-bottom:8px } .tabs button { background:transparent; border:0; color:var(--muted); padding:6px 10px; border-radius:8px; cursor:pointer } .tabs button.on { background:var(--panel2); color:var(--text) }
+  .x { background:transparent; border:0; color:var(--danger); cursor:pointer; font-size:16px }
+  .ok { color:var(--ok) } .warn { color:var(--accent) }
+</style>
+</head>
+<body>
+<header>
+  <a href="./"><i></i> PlanBrief</a>
+  <select id="sheet"></select>
+  <select id="scaleSel" title="Drawing scale"></select>
+  <div class="tools">
+    <button class="tool on" data-tool="pan">Move</button>
+    <button class="tool" data-tool="length">Length</button>
+    <button class="tool" data-tool="area">Area</button>
+    <button class="tool" data-tool="count">Count</button>
+  </div>
+  <button class="btn ghost" id="finish" style="display:none">Finish shape</button>
+  <button class="btn ghost" id="undo">Undo point</button>
+</header>
+<main>
+  <div id="stage">
+    <canvas id="img"></canvas>
+    <canvas id="draw"></canvas>
+    <div id="hint">Pinch or scroll to zoom, drag to move. Pick a tool, then tap points on the sheet.</div>
+    <div id="scaleTag"></div>
+    <div id="readout"></div>
+  </div>
+  <div id="panel">
+    <div class="tabs"><button class="on" data-tab="m">Measurements</button><button data-tab="b">Buy list</button></div>
+    <div id="tab-m"></div>
+    <div id="tab-b" style="display:none"></div>
+  </div>
+</main>
+<script src="config.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.1/dist/umd/supabase.min.js"></script>
+<script>
+const CFG = window.PLANBRIEF_CONFIG || {};
+const sb = supabase.createClient(CFG.supabaseUrl, CFG.supabaseAnonKey);
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const q = new URLSearchParams(location.search);
+const jobId = q.get("job");
+
+// ---------- assemblies: measurement -> materials, with waste. Edit freely. ----------
+// unit of the measurement: LF (walls, with height), SF, EA. qty functions return [material, quantity, unit].
+const ASSEMBLIES = {
+  "wall-wood-16":   { name: "Wood stud wall, 2x4/2x6 at 16\" o.c., 5/8\" gyp both sides", unit: "LF", height: true, parts: (lf, h) => [["Studs (2x at 16\" o.c., incl. corners/ends)", Math.ceil(lf / (16 / 12) * 1.15 + 2), "EA"], ["Plates (top double + bottom), LF", Math.ceil(lf * 3 * 1.05), "LF"], ["5/8\" gypsum board 4x8, both sides", Math.ceil(lf * h * 2 / 32 * 1.10), "SHT"], ["Drywall screws 1-1/4\"", Math.ceil(lf * h * 2 * 1.0), "EA"], ["Joint compound (4.5 gal)", Math.ceil(lf * h * 2 / 450), "BKT"], ["Joint tape (250')", Math.ceil(lf * h * 2 / 350), "ROLL"], ["Framing nails/screws, lb", Math.ceil(lf / 20), "LB"]] },
+  "wall-metal-2hr": { name: "Metal stud wall, 2-1/2\" at 16\" o.c., 2 layers 5/8\" Type X each side (2-hr)", unit: "LF", height: true, parts: (lf, h) => [["Metal studs", Math.ceil(lf / (16 / 12) * 1.15 + 2), "EA"], ["Track (top + bottom), LF", Math.ceil(lf * 2 * 1.05), "LF"], ["5/8\" Type X gypsum 4x8 (4 layers total)", Math.ceil(lf * h * 4 / 32 * 1.10), "SHT"], ["Drywall screws", Math.ceil(lf * h * 4 * 1.0), "EA"], ["Joint compound (4.5 gal)", Math.ceil(lf * h * 2 / 450), "BKT"], ["Fire-rated joint tape (250')", Math.ceil(lf * h * 2 / 350), "ROLL"]] },
+  "wall-cmu-8":     { name: "8\" CMU wall", unit: "LF", height: true, parts: (lf, h) => [["8x8x16 CMU block", Math.ceil(lf * h * 1.125 * 1.05), "EA"], ["Mortar (80 lb bags)", Math.ceil(lf * h * 1.125 / 30), "BAG"], ["Grout, CY (cells at 32\" o.c.)", +(lf * h * 0.012).toFixed(2), "CY"], ["Horizontal joint reinforcing (LF)", Math.ceil(lf * h / (16 / 12) / 2 * 1.05), "LF"]] },
+  "wall-furring":   { name: "7/8\" furring channels + 5/8\" gyp one side (over CMU)", unit: "LF", height: true, parts: (lf, h) => [["Hat channel 7/8\" (LF, 16\" o.c.)", Math.ceil(lf * h / (16 / 12) * 1.1), "LF"], ["5/8\" gypsum board 4x8", Math.ceil(lf * h / 32 * 1.10), "SHT"], ["Screws", Math.ceil(lf * h * 1.0), "EA"], ["Joint compound (4.5 gal)", Math.ceil(lf * h / 450), "BKT"]] },
+  "insul-batt":     { name: "Batt insulation in wall cavity (R-13/R-19)", unit: "LF", height: true, parts: (lf, h) => [["Batt insulation, SF", Math.ceil(lf * h * 1.05), "SF"]] },
+  "base-wood":      { name: "Wood base (WD-1)", unit: "LF", parts: (lf) => [["Base, LF", Math.ceil(lf * 1.10), "LF"], ["Finish nails, box", Math.ceil(lf / 300), "BOX"]] },
+  "base-tile":      { name: "Coved tile base (QT-1)", unit: "LF", parts: (lf) => [["Cove base tile, LF", Math.ceil(lf * 1.10), "LF"]] },
+  "floor-tile":     { name: "Porcelain / quarry tile floor (PT-1, QT-1)", unit: "SF", parts: (sf) => [["Tile, SF", Math.ceil(sf * 1.12), "SF"], ["Thinset (50 lb)", Math.ceil(sf / 80), "BAG"], ["Grout (25 lb)", Math.ceil(sf / 150), "BAG"], ["Uncoupling/crack membrane, SF", Math.ceil(sf * 1.05), "SF"]] },
+  "floor-wood":     { name: "Hardwood / engineered flooring", unit: "SF", parts: (sf) => [["Flooring, SF", Math.ceil(sf * 1.10), "SF"], ["Underlayment, SF", Math.ceil(sf * 1.05), "SF"], ["Cleats/staples, box", Math.ceil(sf / 500), "BOX"]] },
+  "floor-concrete": { name: "4\" concrete slab on grade with WWF and vapor barrier, 6\" gravel", unit: "SF", parts: (sf) => [["Concrete, CY (4\" + 5% waste)", +(sf * 4 / 12 / 27 * 1.05).toFixed(2), "CY"], ["6x6 W1.4 WWF, SF", Math.ceil(sf * 1.15), "SF"], ["Vapor barrier 10 mil, SF", Math.ceil(sf * 1.15), "SF"], ["Gravel 6\", CY", +(sf * 6 / 12 / 27 * 1.1).toFixed(2), "CY"]] },
+  "floor-polished": { name: "Polished concrete (existing slab)", unit: "SF", parts: (sf) => [["Grind/polish, SF", Math.ceil(sf), "SF"], ["Densifier, gal", Math.ceil(sf / 400), "GAL"], ["Sealer, gal", Math.ceil(sf / 500), "GAL"]] },
+  "wall-tile":      { name: "Wall tile to 7'-0\" (CT-1, PT-2)", unit: "SF", parts: (sf) => [["Tile, SF", Math.ceil(sf * 1.12), "SF"], ["Thinset (50 lb)", Math.ceil(sf / 80), "BAG"], ["Grout (25 lb)", Math.ceil(sf / 150), "BAG"], ["Cement board 3x5, SHT", Math.ceil(sf / 15 * 1.1), "SHT"]] },
+  "wall-frp":       { name: "FRP wall panels (kitchen)", unit: "SF", parts: (sf) => [["FRP panels 4x8", Math.ceil(sf / 32 * 1.1), "SHT"], ["FRP adhesive, gal", Math.ceil(sf / 50), "GAL"], ["Trim/moldings, LF", Math.ceil(sf / 4), "LF"]] },
+  "paint-walls":    { name: "Paint walls, primer + 2 coats", unit: "SF", parts: (sf) => [["Primer, gal", Math.ceil(sf / 350), "GAL"], ["Finish paint, gal (2 coats)", Math.ceil(sf * 2 / 350), "GAL"]] },
+  "ceiling-act":    { name: "Acoustic ceiling tile 2x2 with grid (ACT-1/ACT-2)", unit: "SF", parts: (sf) => [["Ceiling tile 2x2, SF", Math.ceil(sf * 1.10), "SF"], ["Main tee 12', EA", Math.ceil(sf / 48 * 1.05), "EA"], ["Cross tee 4', EA", Math.ceil(sf / 8 * 1.05), "EA"], ["Cross tee 2', EA", Math.ceil(sf / 8 * 1.05), "EA"], ["Wall angle 12', EA", Math.ceil(Math.sqrt(sf) * 4 / 12 * 1.1), "EA"], ["Hanger wire, LF", Math.ceil(sf / 16 * 4), "LF"]] },
+  "ceiling-gyp":    { name: "Gypsum ceiling on furring / joists", unit: "SF", parts: (sf) => [["5/8\" gypsum board 4x8", Math.ceil(sf / 32 * 1.12), "SHT"], ["Screws", Math.ceil(sf * 1.2), "EA"], ["Joint compound (4.5 gal)", Math.ceil(sf / 450), "BKT"], ["Tape (250')", Math.ceil(sf / 350), "ROLL"]] },
+  "roof-membrane":  { name: "Roof: 3/4\" plywood + waterproof membrane", unit: "SF", parts: (sf) => [["3/4\" plywood 4x8", Math.ceil(sf / 32 * 1.08), "SHT"], ["Membrane, SF", Math.ceil(sf * 1.15), "SF"]] },
+  "insul-ceiling":  { name: "Ceiling/roof insulation R-38/R-49", unit: "SF", parts: (sf) => [["Insulation, SF", Math.ceil(sf * 1.05), "SF"]] },
+  "brick-veneer":   { name: "Brick veneer 3-5/8\" with 1\" air gap and ties", unit: "SF", parts: (sf) => [["Modular brick (6.75/SF)", Math.ceil(sf * 6.75 * 1.05), "EA"], ["Mortar (80 lb)", Math.ceil(sf / 35), "BAG"], ["Wall ties", Math.ceil(sf / 2.67), "EA"], ["Flashing + weeps, LF", Math.ceil(Math.sqrt(sf) * 2), "LF"]] },
+  "demo-wall":      { name: "Demolish partition (debris)", unit: "LF", height: true, parts: (lf, h) => [["Debris, CY", +(lf * h * 0.5 / 27 * 1.2).toFixed(2), "CY"]] },
+  "concrete-wall":  { name: "Poured concrete foundation wall 12\" x 9' on 2'-6\" x 1' footing", unit: "LF", parts: (lf) => [["Concrete wall, CY", +(lf * 1 * 9 / 27 * 1.05).toFixed(2), "CY"], ["Concrete footing, CY", +(lf * 2.5 * 1 / 27 * 1.05).toFixed(2), "CY"], ["#5 rebar, LF (2 rows + dowels at 12\")", Math.ceil(lf * 2 + lf * 9 / 1), "LF"], ["Form panels, SF (both faces)", Math.ceil(lf * 9 * 2), "SF"]] },
+  "count-each":     { name: "Count (each)", unit: "EA", parts: (n) => [["Items", n, "EA"]] },
+  "none":           { name: "No assembly (measure only)", unit: "", parts: () => [] },
+};
+
+let job, pages = [], sheet = 0, img = new Image(), imgW = 0, imgH = 0;
+let view = { x: 0, y: 0, k: 1 };
+let tool = "pan", pts = [], meas = [];
+let pxPerFt = 1; // on the sheet image
+
+const stage = document.getElementById("stage"), cImg = document.getElementById("img"), cDraw = document.getElementById("draw");
+const ctxI = cImg.getContext("2d"), ctxD = cDraw.getContext("2d");
+const readout = document.getElementById("readout"), hint = document.getElementById("hint"), scaleTag = document.getElementById("scaleTag");
+
+async function init() {
+  const { data } = await sb.from("jobs").select("id,original_name,brief,measure,sheet_urls,page_urls,page_count").eq("id", jobId).single();
+  job = data; if (!job) { document.body.innerHTML = "<p style='padding:20px'>Job not found.</p>"; return; }
+  document.title = `Measure · ${job.brief?.projectName || job.original_name}`;
+  pages = (job.sheet_urls || job.page_urls || []);
+  const sel = document.getElementById("sheet");
+  sel.innerHTML = pages.map((u, i) => `<option value="${i}">Sheet ${i + 1}${sheetTitle(i)}</option>`).join("");
+  sel.onchange = () => loadSheet(Number(sel.value));
+  const { data: ms } = await sb.from("measurements").select("*").eq("job_id", jobId).eq("deleted", false).order("created_at");
+  meas = ms || [];
+  const start = Number(q.get("sheet") || 0);
+  sel.value = String(start);
+  loadSheet(start);
+  renderList();
+}
+function sheetTitle(i) {
+  const s = job.brief?.segments?.find((x) => x.page === i);
+  return s ? ` · ${s.title.replace(/^\d+\.\s*/, "")}` : "";
+}
+function pageMeasure(i) { return (job.measure?.pages || []).find((p) => p.page === i); }
+
+function loadSheet(i) {
+  sheet = i; pts = [];
+  const pm = pageMeasure(i);
+  const scaleSel = document.getElementById("scaleSel");
+  const opts = [];
+  const seen = new Set();
+  for (const s of (pm?.scale_labels || pm?.scales || [])) { if (!seen.has(s.text)) { seen.add(s.text); opts.push(s); } }
+  scaleSel.innerHTML = opts.map((s) => `<option value="${s.pt_per_ft}">${esc(s.text)}</option>`).join("") + `<option value="custom">Set scale by a known dimension…</option>`;
+  if (opts.length) { scaleSel.value = String(pm.default_pt_per_ft || opts[0].pt_per_ft); }
+  scaleSel.onchange = () => { if (scaleSel.value === "custom") startCalibrate(); else applyScale(Number(scaleSel.value)); };
+  img = new Image();
+  img.crossOrigin = "anonymous";
+  img.onload = () => {
+    imgW = img.naturalWidth; imgH = img.naturalHeight;
+    fit();
+    if (opts.length) applyScale(Number(scaleSel.value)); else { pxPerFt = 0; scaleTag.innerHTML = `<span class="warn">No printed scale read on this sheet. Choose "Set scale by a known dimension".</span>`; }
+    draw();
+  };
+  img.src = pages[i];
+}
+function applyScale(ptPerFt) {
+  const pm = pageMeasure(sheet);
+  const widthPt = pm?.width_pt || 2592;
+  pxPerFt = ptPerFt * (imgW / widthPt);
+  const cal = pm?.calibration;
+  const ok = cal && cal.matched >= 3 && (cal.drift_pct ?? 0) < 3;
+  scaleTag.innerHTML = ok ? `<span class="ok">Scale verified</span> <span class="muted">by ${cal.matched} printed dimensions (${cal.drift_pct}% drift)</span>` : `<span class="warn">Scale read from the title block, not confirmed by dimensions.</span> <span class="muted">Check one known dimension before trusting areas.</span>`;
+  draw();
+}
+let calibrating = null;
+function startCalibrate() {
+  calibrating = { pts: [] }; tool = "length"; setToolUI();
+  hint.textContent = "Tap the two ends of a dimension you know, then enter its length.";
+}
+
+// ---------- view ----------
+function fit() {
+  const W = stage.clientWidth, H = stage.clientHeight;
+  cImg.width = cDraw.width = W; cImg.height = cDraw.height = H;
+  view.k = Math.min(W / imgW, H / imgH); view.x = (W - imgW * view.k) / 2; view.y = (H - imgH * view.k) / 2;
+}
+function toImg(sx, sy) { return [(sx - view.x) / view.k, (sy - view.y) / view.k]; }
+function toScr(ix, iy) { return [ix * view.k + view.x, iy * view.k + view.y]; }
+function draw() {
+  const W = cImg.width, H = cImg.height;
+  ctxI.clearRect(0, 0, W, H);
+  ctxI.imageSmoothingQuality = "high";
+  if (imgW) ctxI.drawImage(img, view.x, view.y, imgW * view.k, imgH * view.k);
+  ctxD.clearRect(0, 0, W, H);
+  // saved measurements on this sheet
+  for (const m of meas.filter((x) => x.sheet === sheet)) drawShape(m.points, m.kind, "rgba(56,189,248,.9)", "rgba(56,189,248,.18)", `${m.name || ""} ${fmtVal(m)}`);
+  // in-progress
+  if (pts.length) drawShape(pts, calibrating ? "length" : tool, "rgba(245,158,11,1)", "rgba(245,158,11,.2)", null, true);
+  updateReadout();
+}
+function drawShape(p, kind, stroke, fill, label, live) {
+  const s = p.map(([x, y]) => toScr(x, y));
+  ctxD.lineWidth = 2; ctxD.strokeStyle = stroke; ctxD.fillStyle = fill;
+  if (kind === "count") {
+    for (const [x, y] of s) { ctxD.beginPath(); ctxD.arc(x, y, 7, 0, Math.PI * 2); ctxD.fillStyle = stroke; ctxD.fill(); }
+  } else {
+    ctxD.beginPath(); s.forEach(([x, y], i) => i ? ctxD.lineTo(x, y) : ctxD.moveTo(x, y));
+    if (kind === "area" && s.length > 2) { ctxD.closePath(); ctxD.fill(); }
+    ctxD.stroke();
+    for (const [x, y] of s) { ctxD.beginPath(); ctxD.arc(x, y, live ? 5 : 3, 0, Math.PI * 2); ctxD.fillStyle = stroke; ctxD.fill(); }
+  }
+  if (label && s.length) {
+    const [x, y] = s[0];
+    ctxD.font = "600 12px Inter, system-ui, sans-serif"; const w = ctxD.measureText(label).width + 10;
+    ctxD.fillStyle = "rgba(11,16,32,.85)"; ctxD.fillRect(x + 8, y - 20, w, 18); ctxD.fillStyle = "#e9eef8"; ctxD.fillText(label, x + 13, y - 7);
+  }
+}
+function polyLength(p) { let L = 0; for (let i = 1; i < p.length; i++) L += Math.hypot(p[i][0] - p[i - 1][0], p[i][1] - p[i - 1][1]); return L; }
+function polyArea(p) { let a = 0; for (let i = 0; i < p.length; i++) { const [x1, y1] = p[i], [x2, y2] = p[(i + 1) % p.length]; a += x1 * y2 - x2 * y1; } return Math.abs(a) / 2; }
+function fmtFt(ft) { const f = Math.floor(ft), i = Math.round((ft - f) * 12); return i === 12 ? `${f + 1}'-0"` : `${f}'-${i}"`; }
+function fmtVal(m) { return m.kind === "count" ? `${m.value} EA` : m.kind === "length" ? `${fmtFt(Number(m.value))} (${Number(m.value).toFixed(1)} LF)` : `${Number(m.value).toFixed(0)} SF`; }
+function updateReadout() {
+  if (!pts.length || !pxPerFt && !calibrating) { readout.style.display = "none"; return; }
+  readout.style.display = "block";
+  if (calibrating) { readout.textContent = `${pts.length} of 2 points`; return; }
+  if (tool === "length") readout.textContent = pts.length > 1 ? `${fmtFt(polyLength(pts) / pxPerFt)} · ${(polyLength(pts) / pxPerFt).toFixed(1)} LF` : "Tap the end point";
+  else if (tool === "area") readout.textContent = pts.length > 2 ? `${(polyArea(pts) / pxPerFt / pxPerFt).toFixed(0)} SF · perimeter ${(polyLength([...pts, pts[0]]) / pxPerFt).toFixed(1)} LF` : `${pts.length} point${pts.length === 1 ? "" : "s"}, keep tapping`;
+  else readout.textContent = `${pts.length} counted`;
+}
+
+// ---------- input: pan/zoom + taps ----------
+let pointers = new Map(), lastDist = 0, moved = false, downAt = null;
+stage.addEventListener("pointerdown", (e) => { stage.setPointerCapture(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]); moved = false; downAt = [e.clientX, e.clientY]; });
+stage.addEventListener("pointermove", (e) => {
+  if (!pointers.has(e.pointerId)) return;
+  const prev = pointers.get(e.pointerId); pointers.set(e.pointerId, [e.clientX, e.clientY]);
+  if (pointers.size === 1) {
+    const dx = e.clientX - prev[0], dy = e.clientY - prev[1];
+    if (Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) > 6) moved = true;
+    if (moved) { view.x += dx; view.y += dy; draw(); }
+  } else if (pointers.size === 2) {
+    const [a, b] = [...pointers.values()];
+    const d = Math.hypot(a[0] - b[0], a[1] - b[1]); const cx = (a[0] + b[0]) / 2, cy = (a[1] + b[1]) / 2;
+    if (lastDist) zoomAt(cx, cy, d / lastDist);
+    lastDist = d; moved = true;
+  }
+});
+stage.addEventListener("pointerup", (e) => {
+  pointers.delete(e.pointerId); if (pointers.size < 2) lastDist = 0;
+  if (!moved && tool !== "pan") addPoint(e.clientX, e.clientY);
+  else if (!moved && tool === "pan" && pts.length === 0) {}
+});
+stage.addEventListener("pointercancel", (e) => { pointers.delete(e.pointerId); lastDist = 0; });
+stage.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0015)); }, { passive: false });
+function zoomAt(cx, cy, f) {
+  const r = stage.getBoundingClientRect(); const sx = cx - r.left, sy = cy - r.top;
+  const [ix, iy] = toImg(sx, sy);
+  view.k = Math.max(0.05, Math.min(12, view.k * f));
+  view.x = sx - ix * view.k; view.y = sy - iy * view.k; draw();
+}
+function addPoint(cx, cy) {
+  const r = stage.getBoundingClientRect();
+  const p = toImg(cx - r.left, cy - r.top);
+  pts.push(p);
+  if (calibrating && pts.length === 2) { finishCalibrate(); return; }
+  if (!calibrating && tool === "length" && pts.length === 2) { commit(); return; }
+  draw();
+}
+function finishCalibrate() {
+  const px = polyLength(pts);
+  const s = prompt("Length of that dimension, as printed (e.g. 23'-9\" or 23.75):");
+  pts = []; calibrating = null;
+  const ft = parseFeet(s);
+  if (ft > 0) { pxPerFt = px / ft; scaleTag.innerHTML = `<span class="ok">Scale set from a known dimension</span> <span class="muted">(${fmtFt(ft)})</span>`; }
+  hint.textContent = "Scale set. Pick a tool and tap points.";
+  draw();
+}
+function parseFeet(s) { if (!s) return 0; const m = /^(\d+)\s*'?\s*-?\s*(\d+)?\s*(\d+\/\d+)?\s*"?$/.exec(s.trim()); if (!m) return parseFloat(s) || 0; let v = +m[1]; if (m[2]) v += +m[2] / 12; if (m[3]) { const [a, b] = m[3].split("/"); v += (+a / +b) / 12; } return v; }
+
+document.querySelectorAll(".tool").forEach((b) => b.onclick = () => { tool = b.dataset.tool; pts = []; calibrating = null; setToolUI(); draw(); });
+function setToolUI() {
+  document.querySelectorAll(".tool").forEach((x) => x.classList.toggle("on", x.dataset.tool === tool));
+  document.getElementById("finish").style.display = tool === "area" || tool === "count" ? "" : "none";
+  stage.style.cursor = tool === "pan" ? "grab" : "crosshair";
+  hint.textContent = { pan: "Pinch or scroll to zoom, drag to move.", length: "Tap the start and the end of the run. Zoom in first for accuracy.", area: "Tap each corner of the area, then Finish shape.", count: "Tap each item, then Finish shape." }[tool];
+}
+document.getElementById("finish").onclick = () => commit();
+document.getElementById("undo").onclick = () => { pts.pop(); draw(); };
+
+async function commit() {
+  if (tool === "length" && pts.length < 2) return;
+  if (tool === "area" && pts.length < 3) return;
+  if (tool === "count" && pts.length < 1) return;
+  if (!pxPerFt && tool !== "count") { alert("Set the scale first."); return; }
+  const kind = tool;
+  const value = kind === "length" ? polyLength(pts) / pxPerFt : kind === "area" ? polyArea(pts) / pxPerFt / pxPerFt : pts.length;
+  const unit = kind === "length" ? "LF" : kind === "area" ? "SF" : "EA";
+  const name = prompt(`Name this ${kind} (e.g. "Lounge floor", "Demising wall", "Doors D-2"):`, "") ?? "";
+  const row = { job_id: jobId, sheet, kind, name, points: pts.map(([x, y]) => [Math.round(x), Math.round(y)]), value: +value.toFixed(2), unit, assembly: kind === "count" ? "count-each" : null, height_ft: kind === "length" ? 10 : null };
+  pts = [];
+  const { data, error } = await sb.from("measurements").insert(row).select("*").single();
+  if (error) { alert(error.message); return; }
+  meas.push(data); renderList(); draw();
+}
+async function update(id, patch) {
+  const m = meas.find((x) => x.id === id); Object.assign(m, patch, { updated_at: new Date().toISOString() });
+  await sb.from("measurements").update({ ...patch, updated_at: m.updated_at }).eq("id", id);
+  renderList(); draw();
+}
+
+// ---------- panel ----------
+document.querySelectorAll(".tabs button").forEach((b) => b.onclick = () => { document.querySelectorAll(".tabs button").forEach((x) => x.classList.toggle("on", x === b)); document.getElementById("tab-m").style.display = b.dataset.tab === "m" ? "" : "none"; document.getElementById("tab-b").style.display = b.dataset.tab === "b" ? "" : "none"; renderList(); });
+function assemblyOptions(kind, cur) {
+  const want = kind === "length" ? "LF" : kind === "area" ? "SF" : "EA";
+  return Object.entries(ASSEMBLIES).filter(([k, a]) => a.unit === want || k === "none").map(([k, a]) => `<option value="${k}" ${k === (cur || "none") ? "selected" : ""}>${esc(a.name)}</option>`).join("");
+}
+function renderList() {
+  const el = document.getElementById("tab-m");
+  if (!meas.length) { el.innerHTML = `<p class="muted small">No measurements yet. Pick Length, Area or Count and tap on the sheet. Everything saves to this job and shows in the buy list.</p>`; }
+  else el.innerHTML = `<table><thead><tr><th>Sheet</th><th>Name</th><th class="num">Value</th><th>Height</th><th>Assembly</th><th></th></tr></thead><tbody>${meas.map((m) => `
+    <tr>
+      <td class="muted">${m.sheet + 1}</td>
+      <td><input type="text" value="${esc(m.name)}" style="width:150px" onchange="update('${m.id}',{name:this.value})"></td>
+      <td class="num">${fmtVal(m)}</td>
+      <td>${m.kind === "length" ? `<input type="number" step="0.5" value="${m.height_ft ?? 10}" style="width:64px" onchange="update('${m.id}',{height_ft:+this.value})"> ft` : ""}</td>
+      <td><select onchange="update('${m.id}',{assembly:this.value})" style="max-width:260px">${assemblyOptions(m.kind, m.assembly)}</select></td>
+      <td><button class="x" title="Remove" onclick="update('${m.id}',{deleted:true}).then(()=>{meas=meas.filter(x=>x.id!=='${m.id}');renderList();draw()})">×</button></td>
+    </tr>`).join("")}</tbody></table>`;
+  renderBuy();
+}
+function renderBuy() {
+  const el = document.getElementById("tab-b");
+  const lines = new Map();
+  const src = [];
+  for (const m of meas) {
+    const a = ASSEMBLIES[m.assembly || "none"]; if (!a || !a.parts) continue;
+    const parts = a.parts(Number(m.value), Number(m.height_ft || 10));
+    for (const [mat, qty, unit] of parts) {
+      const key = `${a.name}||${mat}||${unit}`;
+      const cur = lines.get(key) || { assembly: a.name, material: mat, unit, qty: 0, from: [] };
+      cur.qty += Number(qty); cur.from.push(m.name || `${m.kind} on sheet ${m.sheet + 1}`); lines.set(key, cur);
+    }
+  }
+  const rows = [...lines.values()];
+  if (!rows.length) { el.innerHTML = `<p class="muted small">Assign an assembly to each measurement (Measurements tab) and the buy list builds itself here, with waste included.</p>`; return; }
+  const byA = {}; for (const r of rows) (byA[r.assembly] ||= []).push(r);
+  el.innerHTML = `<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px"><span class="muted small">Quantities include waste (framing 15%, gyp 10%, tile 12%, concrete 5%). Edit the factors in the page source if your crew runs tighter. Verify against the sheets before ordering.</span><button class="btn ghost" onclick="downloadCsv()">Download CSV</button></div>` +
+    Object.entries(byA).map(([a, rs]) => `<h4 style="margin:12px 0 6px;font-size:13px">${esc(a)}</h4><table><thead><tr><th>Material</th><th class="num">Buy</th><th>Unit</th><th>From</th></tr></thead><tbody>${rs.map((r) => `<tr><td>${esc(r.material)}</td><td class="num"><strong>${Number.isInteger(r.qty) ? r.qty : r.qty.toFixed(2)}</strong></td><td>${r.unit}</td><td class="muted small">${esc([...new Set(r.from)].join(", "))}</td></tr>`).join("")}</tbody></table>`).join("");
+  window._buyRows = rows;
+}
+function downloadCsv() {
+  const rows = window._buyRows || [];
+  const csv = ["Assembly,Material,Buy quantity,Unit,From"].concat(rows.map((r) => [r.assembly, r.material, r.qty, r.unit, [...new Set(r.from)].join("; ")].map((x) => `"${String(x).replace(/"/g, '""')}"`).join(","))).join("\n");
+  const a = document.createElement("a"); a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = `${(job.brief?.projectName || "planbrief").replace(/[^\w]+/g, "_")}_buy_list.csv`; a.click();
+}
+window.addEventListener("resize", () => { fit(); draw(); });
+init();
+</script>
+</body>
+</html>

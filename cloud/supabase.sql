@@ -54,3 +54,30 @@ alter table public.jobs add column if not exists guide_url text;
 -- v3: first-pass quantity takeoff
 alter table public.jobs add column if not exists takeoff jsonb;
 alter table public.jobs add column if not exists takeoff_url text;
+
+-- v4: drawing scales, sharper sheet images, and measurements people take on the sheets
+alter table public.jobs add column if not exists measure jsonb;
+alter table public.jobs add column if not exists sheet_urls jsonb;
+
+create table if not exists public.measurements (
+  id uuid primary key default gen_random_uuid(),
+  job_id uuid not null references public.jobs(id) on delete cascade,
+  created_at timestamptz not null default now(),
+  updated_at timestamptz not null default now(),
+  sheet int not null,
+  kind text not null,               -- length | area | count
+  name text not null default '',
+  assembly text,                    -- assembly key for the buy list
+  points jsonb not null,            -- [[x,y],...] in sheet-image pixel coordinates
+  value numeric not null,           -- LF, SF or EA
+  unit text not null,
+  height_ft numeric,                -- for walls
+  deleted boolean not null default false
+);
+alter table public.measurements enable row level security;
+drop policy if exists "public measurements insert" on public.measurements;
+create policy "public measurements insert" on public.measurements for insert to anon with check (true);
+drop policy if exists "public measurements select" on public.measurements;
+create policy "public measurements select" on public.measurements for select to anon using (true);
+drop policy if exists "public measurements update" on public.measurements;
+create policy "public measurements update" on public.measurements for update to anon using (true) with check (true);

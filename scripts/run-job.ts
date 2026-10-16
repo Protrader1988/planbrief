@@ -117,6 +117,23 @@ async function main() {
     for (const p of pages) thumbs.push(await upload("videos", `${id}/page-${p.index}.jpg`, p.thumbPath, "image/jpeg"));
     await patch(id, { progress: guideOnly ? 80 : 51, message: `Guide ready (${g.pages} pages)`, guide_url: guideUrl, page_urls: thumbs });
 
+    // Sheet scales (read and calibrated) plus sharper sheet images for the measure tool.
+    try {
+      await patch(id, { message: "Reading drawing scales" });
+      const mdir = path.join(work, "measure");
+      await run("python3", ["scripts/measure.py", pdf, mdir], { maxBuffer: 64 * 1024 * 1024 });
+      const measure = JSON.parse(await fs.readFile(path.join(mdir, "measure.json"), "utf8"));
+      const sheetUrls: string[] = [];
+      for (const p of pages) {
+        const jpg = path.join(mdir, `sheet-${p.index}.jpg`);
+        await run("ffmpeg", ["-y", "-loglevel", "error", "-i", p.imagePath, "-vf", "scale='min(2600,iw)':-2", "-q:v", "4", jpg]);
+        sheetUrls.push(await upload("videos", `${id}/sheet-${p.index}.jpg`, jpg, "image/jpeg"));
+      }
+      await patch(id, { measure: { pages: measure.pages.map((m: Record<string, unknown>) => ({ ...m, overlay: undefined })) }, sheet_urls: sheetUrls });
+    } catch (e) {
+      console.warn("scale detection failed:", e);
+    }
+
     // First-pass quantity takeoff from the same sheets, checked two ways.
     if (job.outputs !== "video-only") {
       await patch(id, { status: "takeoff", message: "Taking off quantities" });
