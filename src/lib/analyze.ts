@@ -279,34 +279,39 @@ ${imageList}
 Read the text file and every listed image. For sets over 24 pages, first decide the chapters (overview, existing, demolition, proposed, MEP, and so on), then write each chapter's segments page by page; the result must still be ONE JSON object. Write it to ${outFile} with the Write tool. Write nothing else.`;
 
   const bin = process.env.CLAUDE_CODE_BIN || "claude";
-  await new Promise<void>((resolve, reject) => {
-    const p = spawn(
-      bin,
-      ["-p", prompt, "--allowedTools", "Read,Write", "--permission-mode", "acceptEdits", "--output-format", "text"],
-      { cwd: dir, stdio: ["ignore", "pipe", "pipe"], env: { ...process.env, CLAUDECODE: "" } },
-    );
-    let err = "";
-    p.stderr.on("data", (d) => (err += d));
-    p.stdout.on("data", () => {});
-    p.on("error", (e) => reject(new Error(`Could not start Claude Code (${bin}): ${e.message}`)));
-    p.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Claude Code exited ${code}: ${err.slice(-2000)}`))));
-  });
-  const raw = await fs.readFile(outFile, "utf8").catch(() => {
-    throw new Error("Claude Code finished but did not write brief.json");
-  });
-  return normalizeBrief(parseJsonLoose(raw), pages.length);
+  let lastErr: unknown;
+  for (let attempt = 0; attempt < 2; attempt++) {
+    try {
+      await fs.rm(outFile, { force: true });
+      await new Promise<void>((resolve, reject) => {
+        const p = spawn(
+          bin,
+          ["-p", "--allowedTools", "Read,Write", "--permission-mode", "acceptEdits", "--output-format", "text"],
+          { cwd: dir, stdio: ["pipe", "pipe", "pipe"], env: { ...process.env, CLAUDECODE: "" } },
+        );
+        p.stdin.on("error", () => {});
+        p.stdin.end(prompt);
+        let err = "";
+        p.stderr.on("data", (d) => (err += d));
+        p.stdout.on("data", () => {});
+        p.on("error", (e) => reject(new Error(`Could not start Claude Code (${bin}): ${e.message}`)));
+        p.on("close", (code) => (code === 0 ? resolve() : reject(new Error(`Claude Code exited ${code}: ${err.slice(-2000)}`))));
+      });
+      const raw = await fs.readFile(outFile, "utf8").catch(() => {
+        throw new Error("Claude Code finished but did not write brief.json");
+      });
+      return normalizeBrief(parseJsonLoose(raw), pages.length);
+    } catch (e) {
+      lastErr = e;
+      console.warn(`script attempt ${attempt + 1} failed: ${e instanceof Error ? e.message : e}`);
+    }
+  }
+  throw lastErr;
 }
 
 /** Accepts JSON possibly wrapped in a code fence or prose. */
 export function parseJsonLoose(raw: string): Brief {
-  const trimmed = raw.trim();
-  try {
-    return JSON.parse(trimmed);
-  } catch {
-    const m = /\{[\s\S]*\}/.exec(trimmed);
-    if (!m) throw new Error("No JSON object found in the script");
-    return JSON.parse(m[0]);
-  }
+  return _parse<Brief>(raw); // repairs trailing commas, stray quotes and truncated tails before giving up
 }
 
 // ---------- two-pass analysis for large sets ----------
