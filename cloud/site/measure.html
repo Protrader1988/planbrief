@@ -22,17 +22,28 @@
   #hint { position:absolute; left:12px; top:10px; background:rgba(11,16,32,.85); padding:6px 10px; border-radius:8px; font-size:13px; color:var(--muted); pointer-events:none }
   #scaleTag { position:absolute; right:12px; top:10px; background:rgba(11,16,32,.85); padding:6px 10px; border-radius:8px; font-size:13px; pointer-events:none }
   #readout { position:absolute; left:12px; bottom:12px; background:rgba(245,158,11,.95); color:#1a1304; font-weight:700; padding:8px 12px; border-radius:10px; font-size:16px; pointer-events:none; display:none }
-  #panel { border-top:1px solid var(--line); background:var(--panel); max-height:42vh; overflow:auto; padding:10px 12px }
+  #panel { border-top:1px solid var(--line); background:var(--panel); max-height:42vh; overflow:auto; padding:10px 12px } #tab-b table { min-width:520px } #tab-b { overflow-x:auto }
   table { width:100%; border-collapse:collapse; font-size:13px } th, td { text-align:left; padding:6px 6px; border-bottom:1px solid var(--line); vertical-align:middle } th { font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--muted) } td.num { text-align:right; white-space:nowrap }
   .muted { color:var(--muted) } .small { font-size:12px }
   .tabs { display:flex; gap:6px; margin-bottom:8px } .tabs button { background:transparent; border:0; color:var(--muted); padding:6px 10px; border-radius:8px; cursor:pointer } .tabs button.on { background:var(--panel2); color:var(--text) }
   .x { background:transparent; border:0; color:var(--danger); cursor:pointer; font-size:16px }
   .ok { color:var(--ok) } .warn { color:var(--accent) }
+  .mcard { background:var(--panel2); border:1px solid var(--line); border-radius:12px; padding:10px 12px; margin-bottom:8px; display:grid; gap:8px }
+  .mcard .top { display:flex; justify-content:space-between; align-items:center; gap:8px } .mcard .val { font-weight:700; font-size:15px; white-space:nowrap }
+  .mcard input[type=text] { width:100%; min-width:0 } .mcard select { width:100%; max-width:100% } .mcard .line { display:flex; gap:8px; align-items:center }
+  @media (max-width: 700px) {
+    header { padding:8px 10px; gap:6px } header a span.word { display:none } header select { max-width:46vw; font-size:13px; padding:6px 8px } #scaleSel { max-width:28vw }
+    .tools { gap:4px } .tool { padding:7px 10px; font-size:13px } .btn { padding:7px 10px; font-size:13px }
+    #hint { font-size:12px; max-width:62vw } #scaleTag { font-size:11px; max-width:36vw; text-align:right }
+    #panel { max-height:46vh; padding:8px 10px } #readout { font-size:15px }
+    .desk { display:none }
+  }
+  @media (min-width: 701px) { .mob { display:none } }
 </style>
 </head>
 <body>
 <header>
-  <a href="./"><i></i> PlanBrief</a>
+  <a href="./"><i></i> <span class="word">PlanBrief</span></a>
   <select id="sheet"></select>
   <select id="scaleSel" title="Drawing scale"></select>
   <div class="tools">
@@ -371,7 +382,12 @@ function assemblyOptions(kind, cur) {
 function renderList() {
   const el = document.getElementById("tab-m");
   if (!meas.length) { el.innerHTML = `<p class="muted small">No measurements yet. Pick Length, Area or Count and tap on the sheet. Everything saves to this job and shows in the buy list.</p>`; }
-  else el.innerHTML = `<datalist id="hts">${heightPresets.map((h) => `<option value="${h.ft.toFixed(2)}">${esc(h.label)}</option>`).join("")}</datalist>${heightPresets.length ? `<p class="muted small" style="margin:0 0 6px">Heights read from this set: ${heightPresets.map((h) => esc(fmtFt(h.ft))).join(", ")}. Pick one in the Height box.</p>` : ""}<table><thead><tr><th>Sheet</th><th>Name</th><th class="num">Value</th><th>Height</th><th>Assembly</th><th></th></tr></thead><tbody>${meas.map((m) => `
+  else el.innerHTML = `<div class="mob">${meas.map((m) => `
+    <div class="mcard">
+      <div class="top"><input type="text" value="${esc(m.name)}" onchange="update('${m.id}',{name:this.value})"><span class="val">${fmtVal(m)}</span><button class="x" onclick="update('${m.id}',{deleted:true}).then(()=>{meas=meas.filter(x=>x.id!=='${m.id}');renderList();draw()})">×</button></div>
+      <div class="line"><span class="muted small">Sheet ${m.sheet + 1}</span>${m.kind === "length" ? `<span class="muted small">Height</span><input type="number" step="0.25" list="hts" value="${m.height_ft ?? 10}" style="width:76px" onchange="update('${m.id}',{height_ft:+this.value})"><span class="muted small">ft</span>` : ""}</div>
+      <select onchange="update('${m.id}',{assembly:this.value})">${assemblyOptions(m.kind, m.assembly)}</select>
+    </div>`).join("")}</div><div class="desk"></div><datalist id="hts">${heightPresets.map((h) => `<option value="${h.ft.toFixed(2)}">${esc(h.label)}</option>`).join("")}</datalist>${heightPresets.length ? `<p class="muted small" style="margin:0 0 6px">Heights read from this set: ${heightPresets.map((h) => esc(fmtFt(h.ft))).join(", ")}. Pick one in the Height box.</p>` : ""}<table class="desk"><thead><tr><th>Sheet</th><th>Name</th><th class="num">Value</th><th>Height</th><th>Assembly</th><th></th></tr></thead><tbody>${meas.map((m) => `
     <tr>
       <td class="muted">${m.sheet + 1}</td>
       <td><input type="text" value="${esc(m.name)}" style="width:150px" onchange="update('${m.id}',{name:this.value})"></td>

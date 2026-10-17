@@ -34,6 +34,8 @@ export type TakeoffItem = {
 export type NotCountable = { what: string; why: string; where: string };
 export type Takeoff = {
   items: TakeoffItem[];
+  /** specification notes the sheets state (thickness, spacing, rating, PSI, R-value): useful, but not quantities to price */
+  specs: TakeoffItem[];
   notCountable: NotCountable[];
   checks: { mechanical: { verified: number; derived: number; unverified: number }; estimator: { ran: boolean; findings: number; error?: string } };
 };
@@ -172,7 +174,9 @@ export async function extractTakeoff(pages: PageInfo[], brief: Brief, workDir: s
   }
 
   items.sort((a, b) => CATEGORIES.indexOf(a.category) - CATEGORIES.indexOf(b.category) || a.sheet - b.sheet);
-  return { items, notCountable: dedupeNC(notCountable), checks: { mechanical: mech, estimator } };
+  const specs = items.filter(isSpecNote);
+  const quantities = items.filter((i) => !isSpecNote(i));
+  return { items: quantities, specs, notCountable: dedupeNC(notCountable), checks: { mechanical: mech, estimator } };
 }
 
 /** Matches each line's quoted source text and quantity against the sheet's text layer. */
@@ -216,6 +220,16 @@ function hasFraction(text: string, qty: number): boolean {
 }
 
 /** 48.31 matches 48'-3 3/4" (also as the extractor garbles it, 48'-343"), 104.375 matches 104'-4 1/2", 60 matches 60'-0". */
+/** A thickness, spacing, rating or property is a spec to carry into pricing, not a quantity to buy. */
+export function isSpecNote(it: TakeoffItem): boolean {
+  const u = (it.unit || "").toUpperCase().replace(/\./g, "");
+  if (["IN", "INCH", "INCHES", "PSI", "HR", "HOUR", "HOURS", "MIN", "GA", "GAUGE", "%", "R", "U", "DEG", "MPH", "PSF", "KSI"].includes(u)) return true;
+  if (/^(IN|R|U)[\s-]/.test(u)) return true;
+  const d = it.description.toLowerCase();
+  if (/\b(thick|thickness|spacing|o\.?c\.?|on center|gauge|rating|rated|r-value|u-factor|u-value|psi|f\.a\.r|ratio|height|clear height|ceiling height|slope|pitch|embedment|min(imum)? |max(imum)? )/.test(d) && !/\b(sf|lf|cy|cf|ea|each|sy|ton|lb)\b/.test(u.toLowerCase())) return true;
+  return false;
+}
+
 function hasFeetInches(text: string, qty: number): boolean {
   const ft = Math.floor(qty);
   const inchesF = (qty - ft) * 12;
@@ -263,6 +277,11 @@ export async function writeTakeoffXlsx(t: Takeoff, brief: Brief, outFile: string
     row.getCell("quantity").numFmt = "#,##0.00";
   }
   ws.autoFilter = { from: { row: 4, column: 1 }, to: { row: 4 + t.items.length, column: 12 } };
+
+  const wsS = wb.addWorksheet("Specs noted on the sheets");
+  wsS.columns = [{ header: "Category", key: "category", width: 26 }, { header: "Specification", key: "description", width: 60 }, { header: "Value", key: "quantity", width: 10 }, { header: "Unit", key: "unit", width: 8 }, { header: "Sheet", key: "sheet", width: 7 }, { header: "Printed text", key: "sourceText", width: 50 }, { header: "Check", key: "status", width: 11 }];
+  wsS.getRow(1).font = { bold: true };
+  for (const it of t.specs || []) wsS.addRow({ ...it, sheet: it.sheet + 1 });
 
   const ws2 = wb.addWorksheet("Not countable from this set");
   ws2.columns = [{ header: "What an estimator needs", key: "what", width: 50 }, { header: "Why it cannot be taken off", key: "why", width: 60 }, { header: "Sheet that would carry it", key: "where", width: 40 }];
